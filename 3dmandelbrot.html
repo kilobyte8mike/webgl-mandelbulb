@@ -93,12 +93,12 @@ uniform int time;
 uniform vec3 camera;
 uniform  mat3 viewRotation;
   
-  float ftime = 0.0; //float(time); 	
+  float ftime = float(time); 	
   
 const int width = 500;
 const int height = 500;
 const float pixelSize = 1.0;
-const int  antialiasing = 1;
+const int  antialiasing = 0;
 const bool  phong = true;
  bool  julia = false;
  bool  radiolaria = false;
@@ -108,7 +108,7 @@ const float ambientOcclusion = 0.5;
 const float ambientOcclusionEmphasis = 0.5;
 const float bounding = 1.718;
 const float bailout = 4.0;
-const float power = 8.0;
+float power = 8.0 + cos(ftime / 10000.0) * 4.0;
  vec2  phase = vec2(0.0, 0.0);
  vec3  julia_c = vec3(0.95, 0.0, 0.0);
   // vec3  camera = vec3(1.0, 0.5, 2.0);
@@ -125,7 +125,7 @@ const float power = 8.0;
  float specularity = 0.5;
  float specularExponent = 25.0;
 
-vec3 rotation = vec3(0.0, 0.0 , 180.0 * cos(ftime/10000.0)); 
+vec3 rotation = vec3(0.0, 0.0 , 0.0); 
 const int   maxIterations = 8;
 const int   stepLimit = 125;
 const float epsilonScale = 1.0;
@@ -654,10 +654,11 @@ void main()
     }
    
     var currentlyPressedKeys = {};
-  var cameraMatrix = mat4.create();
-  mat4.identity(cameraMatrix);
-  mat4.translate(cameraMatrix, [1.0, 0.05, 2.0]);
-  mat4.rotate(cameraMatrix, 0.0, [0.0, 0.0, 0.0]);
+  var cameraRotation = mat4.create();
+  mat4.identity(cameraRotation);
+  var cameraPosition = [0.0, 0.0, 2.0];
+  //mat4.translate(cameraRotation, [1.0, 0.05, 2.0]);
+  //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0]);
     function handleKeyDown(event) {
 	  	currentlyPressedKeys[event.keyCode] = true;
   	}
@@ -667,38 +668,68 @@ void main()
 	  }
 
     function handleKeys() {
+      var newRotation = mat4.create();
+      mat4.identity(newRotation);
       if (currentlyPressedKeys[73]) {
         //  i
-        mat4.rotate(cameraMatrix, 0.1, [1.0, 0.0, 0.0]);
+        mat4.rotate(newRotation, 0.1, [1.0, 0.0, 0.0]);
       }
         if (currentlyPressedKeys[74]) {
           //  j
-          mat4.rotate(cameraMatrix, -0.1, [0.0, 1.0, 0.0]);
+          mat4.rotate(newRotation, -0.1, [0.0, 1.0, 0.0]);
         }
       if (currentlyPressedKeys[75]) {
         //  k
-        mat4.rotate(cameraMatrix, -0.1, [1.0, 0.0, 0.0]);
+        mat4.rotate(newRotation, -0.1, [1.0, 0.0, 0.0]);
       }
       if (currentlyPressedKeys[76]) {
         // l
-        mat4.rotate(cameraMatrix, 0.1, [0.0, 1.0, 0.0]);
+        mat4.rotate(newRotation, 0.1, [0.0, 1.0, 0.0]);
       }
+      //set cameraRotation based on new input
+      mat4.multiply(newRotation, cameraRotation, cameraRotation);
+      
+      //create a vector coming out from the camera to determine which way to move
+      var cameraDir = [0.0, 0.0, -1.0];
+      mat4.multiplyVec3(cameraRotation, cameraDir);
+      
       if (currentlyPressedKeys[87]) {
         // w
-        mat4.translate(cameraMatrix, [0.0, 0.0, -0.1]);
-      }
-      if (currentlyPressedKeys[65]) {
-        // a
-        mat4.translate(cameraMatrix, [-0.1, 0.0, 0.0]);
+        cameraPosition[0] -= 0.1 * cameraDir[0];
+        cameraPosition[1] -= 0.1 * cameraDir[1] ;
+        cameraPosition[2] += 0.1 * cameraDir[2];
       }
       if (currentlyPressedKeys[83]) {
         // s
-        mat4.translate(cameraMatrix, [0.0, 0.0, 0.1]);
+        cameraPosition[0] += 0.1 * cameraDir[0];
+        cameraPosition[1] += 0.1 * cameraDir[1];
+        cameraPosition[2] -= 0.1 * cameraDir[2];
       }
+      
+      //now create a vector pointing to the right as the camera would see it
+      var xDir = [1.0, 0.0, 0.0];
+      mat4.multiplyVec3(cameraRotation, xDir);
+      
+      if (currentlyPressedKeys[65]) {
+        // a
+        cameraPosition[0] -= 0.1 * xDir[0];
+        cameraPosition[1] += 0.1 * xDir[1];
+        cameraPosition[2] += 0.1 * xDir[2];
+      }
+      
       if (currentlyPressedKeys[68]) {
         // d
-        mat4.translate(cameraMatrix, [0.1, 0.0, 0.0]);
+        cameraPosition[0] += 0.1 * xDir[0];
+        cameraPosition[1] -= 0.1 * xDir[1];
+        cameraPosition[2] -= 0.1 * xDir[2];
       }
+      document.getElementById("cameraDirectionX").value = cameraDir[0];
+      document.getElementById("cameraDirectionY").value = cameraDir[1];
+      document.getElementById("cameraDirectionZ").value = cameraDir[2];
+      
+      document.getElementById("cameraPosX").value = cameraPosition[0];
+      document.getElementById("cameraPosY").value = cameraPosition[1];
+      document.getElementById("cameraPosZ").value = cameraPosition[2];
     }
     var rTri = 0;
     var rSquare = 0;
@@ -722,8 +753,8 @@ void main()
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
       gl.uniform1i(shaderProgram.time, time);
-      gl.uniform3fv(shaderProgram.camera, [cameraMatrix[12], cameraMatrix[13], cameraMatrix[14]]);
-      gl.uniformMatrix3fv(shaderProgram.viewRotation, false, mat4.toMat3(cameraMatrix));
+      gl.uniform3fv(shaderProgram.camera, cameraPosition);
+      gl.uniformMatrix3fv(shaderProgram.viewRotation, false, mat4.toMat3(cameraRotation));
       setMatrixUniforms();
         
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
@@ -771,6 +802,13 @@ void main()
     <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
 
     <br/>
+  Camera Direction: X:<input type="text" id="cameraDirectionX" value="0.0" />
+  Y:<input type="text" id="cameraDirectionY" value="0.0" />
+  Z:<input type="text" id="cameraDirectionZ" value="-1.0" /> <br/>
+  Camera Position: X:<input type="text" id="cameraPosX" value="0.0" />
+  Y:<input type="text" id="cameraPosY" value="0.0" />
+  Z:<input type="text" id="cameraPosZ" value="2.0" /> <br/>
+
     <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
 </body>
 
