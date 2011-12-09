@@ -661,11 +661,86 @@ void main()
         squareVertexPositionBuffer.itemSize = 3;
         squareVertexPositionBuffer.numItems = 4;
     }
-   
+    function length(vect){
+        var total = 0.0;
+        for(var i =0; i<3; i++)
+            total += vect[i] * vect[i];
+        return Math.sqrt(total);
+    }
+    
+    var maxIterationsLimit=50;
+    var power;
+    var bailout = 4.0;
+    var phase = [0.0, 0.0];
+    function DE( z0 ) {
+        var min_dist = 4.0
+	    //vec3 c = julia ? julia_c : z0; // Julia set has fixed c, Mandelbrot c changes with location
+	    var c = [z0[0], z0[1], z0[2]];
+        var z = [z0[0], z0[1], z0[2]];
+    	var pd = power - 1.0;			 // power for derivative
+
+    	// Convert z to polar coordinates
+    	var r  = length(z);
+       
+    	var th = Math.atan(z[1], z[0]);
+    	var ph = Math.asin(z[2] / r);
+
+    	// Record z orbit distance for ambient occulsion shading
+    	if (r < min_dist) min_dist = r;
+    
+    	var dz = [0.0, 0.0, 0.0];
+    	var ph_dz = 0.0;
+    	var th_dz = 0.0;
+    	var r_dz	= 1.0;
+    	var powR, powRsin;
+
+    	// Iterate to compute the distance estimator.
+    	for (var n = 0; n < maxIterationsLimit; n++) {
+    		if(n >= maxIterations)
+    		  break;
+    		// Calculate derivative of
+    		powR = power * Math.pow(r, pd);
+    		powRsin = powR * r_dz * Math.sin(ph_dz + pd*ph);
+    		dz[0] = powRsin * Math.cos(th_dz + pd*th) + 1.0;
+    		dz[1] = powRsin * Math.sin(th_dz + pd*th);
+    		dz[2] = powR * r_dz * Math.cos(ph_dz + pd*ph);
+            
+    		// polar coordinates of derivative dz
+    		r_dz  = length(dz);
+            
+    		th_dz = Math.atan(dz[1], dz[0]);
+    		ph_dz = Math.acos(dz[2] / r_dz);
+    
+    		// z iteration
+    		powR = Math.pow(r, power);
+    		powRsin = Math.sin(power*ph);
+    		z[0] = powR * powRsin * Math.cos(power*th) + c[0];
+    		z[1] = powR * powRsin * Math.sin(power*th) + c[1];
+    		z[2] = powR * Math.cos(power*ph) + c[2];
+    		
+    		// The triplex power formula applies the azimuthal angle rotation about the y-axis.
+    		// Constrain this to get some funky effects
+    		//if (radiolaria && z[1] > radiolariaFactor) z[1] = radiolariaFactor;
+
+    		r  = length(z);
+            
+    		if (r < min_dist) min_dist = r;
+    		if (r > bailout) break;
+
+    		th = Math.atan(z[1], z[0]) + phase[0];
+    		ph = Math.acos(z[2] / r) + phase[1];
+
+	}
+
+	// Return the distance estimation value which determines the next raytracing
+	// step size, or if whether we are within the threshold of the surface.
+    
+	return 0.5 * r * Math.log(r)/r_dz;
+}
     var currentlyPressedKeys = {};
   var cameraRotation = mat4.create();
   mat4.identity(cameraRotation);
-  var cameraPosition = [0.0, 0.0, 2.0];
+  var cameraPosition = [0.5, -0.5, 2.0];
   
   //mat4.translate(cameraRotation, [1.0, 0.05, 2.0]);
   //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0])
@@ -721,17 +796,22 @@ void main()
       var zDir = [0.0, 0.0, 1.0];
       mat4.multiplyVec3(inverseMatrix, zDir);
       
+      var dist = DE(cameraPosition); 
+      document.getElementById("cameraDistance").value = dist;
+      dist = Math.min(dist , .1);
+      var zDir = [0.0, 0.0, 1.0];
+      mat4.multiplyVec3(inverseMatrix, zDir);
       if (currentlyPressedKeys[87]) {
         // w
-        cameraPosition[0] -= 0.1 * zDir[0];
-        cameraPosition[1] -= 0.1 * zDir[1] ;
-        cameraPosition[2] -= 0.1 * zDir[2];
+        cameraPosition[0] -= dist * zDir[0];
+        cameraPosition[1] -= dist * zDir[1] ;
+        cameraPosition[2] -= dist * zDir[2];
       }
       if (currentlyPressedKeys[83]) {
         // s
-        cameraPosition[0] += 0.1 * zDir[0];
-        cameraPosition[1] += 0.1 * zDir[1];
-        cameraPosition[2] += 0.1 * zDir[2];
+        cameraPosition[0] += dist * zDir[0];
+        cameraPosition[1] += dist * zDir[1];
+        cameraPosition[2] += dist * zDir[2];
       }
       
       //now create a vector pointing to the right as the camera would see it
@@ -741,16 +821,16 @@ void main()
       
       if (currentlyPressedKeys[65]) {
         // a
-        cameraPosition[0] -= 0.1 * xDir[0];
-        cameraPosition[1] -= 0.1 * xDir[1];
-        cameraPosition[2] -= 0.1 * xDir[2];
+        cameraPosition[0] -= dist * xDir[0];
+        cameraPosition[1] -= dist * xDir[1];
+        cameraPosition[2] -= dist * xDir[2];
       }
       
       if (currentlyPressedKeys[68]) {
         // d
-        cameraPosition[0] += 0.1 * xDir[0];
-        cameraPosition[1] += 0.1 * xDir[1];
-        cameraPosition[2] += 0.1 * xDir[2];
+        cameraPosition[0] += dist * xDir[0];
+        cameraPosition[1] += dist * xDir[1];
+        cameraPosition[2] += dist * xDir[2];
       }
 
 //calculate up vector for elevator movement
@@ -759,16 +839,16 @@ void main()
       
       if (currentlyPressedKeys[69]) {
         // e
-        cameraPosition[0] -= 0.1 * yDir[0];
-        cameraPosition[1] -= 0.1 * yDir[1];
-        cameraPosition[2] -= 0.1 * yDir[2];
+        cameraPosition[0] -= dist * yDir[0];
+        cameraPosition[1] -= dist * yDir[1];
+        cameraPosition[2] -= dist * yDir[2];
       }
       
       if (currentlyPressedKeys[67]) {
         // c
-        cameraPosition[0] += 0.1 * yDir[0];
-        cameraPosition[1] += 0.1 * yDir[1];
-        cameraPosition[2] += 0.1 * yDir[2];
+        cameraPosition[0] += dist * yDir[0];
+        cameraPosition[1] += dist * yDir[1];
+        cameraPosition[2] += dist * yDir[2];
       }
       document.getElementById("cameraDirectionX").value = Math.round(zDir[0] * 100)/100;
       document.getElementById("cameraDirectionY").value = Math.round(zDir[1] * 100)/100;
@@ -777,17 +857,16 @@ void main()
       document.getElementById("cameraPosX").value = Math.round(cameraPosition[0] * 100)/100;
       document.getElementById("cameraPosY").value = Math.round(cameraPosition[1] * 100)/100;
       document.getElementById("cameraPosZ").value = Math.round(cameraPosition[2] * 100)/100;
+
+      
     }
     var rTri = 0;
     var rSquare = 0;
     var time = 0.0;
-//<<<<<<< HEAD
-    var power;
 
-//=======
     var lastFPS = 0.0;
     var smoothFPS = 0;
-//>>>>>>> f3a57e6bbc0ad2ffe86aaf5e68b0ef95afdb566a
+
     function drawScene() {
     if(smoothFPS % 10 == 0){
       document.getElementById("fps").value = Math.round(1000000/(time - lastFPS))/100 ;
@@ -884,7 +963,7 @@ void main()
   Camera Position: X:<input type="text" id="cameraPosX" value="0.0" />
   Y:<input type="text" id="cameraPosY" value="0.0" />
   Z:<input type="text" id="cameraPosZ" value="2.0" /> <br/>
-
+  Camera Distance to fractal:<input type="text" id="cameraDistance" value="0.0" />
   Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" checked/>
   Power: <input type="text" id="power" value="8" /> <br/>
 
