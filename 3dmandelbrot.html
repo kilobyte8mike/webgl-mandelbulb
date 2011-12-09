@@ -92,6 +92,7 @@ uniform float epsilonScale;
 uniform int time;
 uniform vec3 camera;
 uniform  mat3 viewRotation;
+uniform float power;
   
   float ftime = float(time); 	
   
@@ -108,7 +109,7 @@ const float ambientOcclusion = 0.5;
 const float ambientOcclusionEmphasis = 0.5;
 const float bounding = 1.718;
 const float bailout = 4.0;
-float power = 8.0 + cos(ftime / 10000.0) * 4.0;
+//float power = 8.0 + cos(ftime / 10000.0) * 4.0;
  vec2  phase = vec2(0.0, 0.0);
  vec3  julia_c = vec3(0.95, 0.0, 0.0);
   // vec3  camera = vec3(1.0, 0.5, 2.0);
@@ -141,6 +142,9 @@ varying vec3 Position;
 
 vec2 size = vec2(float(width), float(height));
 float aspectRatio = size.x / size.y;
+
+
+
 /*
 // Camera orientation
 float c1 = cos(radians(-cameraRotation.x));
@@ -601,6 +605,8 @@ void main()
 	shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
       shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
       shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
+
+	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
       
 	
         shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
@@ -737,6 +743,7 @@ void main()
     var rTri = 0;
     var rSquare = 0;
     var time = 0.0;
+    var power;
 
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -763,6 +770,21 @@ void main()
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 
         mvPopMatrix();
+
+	
+	
+	//changing of powers
+	if(document.getElementById("iteratePowers").checked==true){
+    	    power = 8.0 + Math.cos(time / 10000.0) * 4.0;
+    	    document.getElementById("power").value = power;
+	    document.getElementById("power").type = "text";
+	}else{
+    	    power = document.getElementById("power").value;
+	    document.getElementById("power").type = "textarea";
+	}
+	
+	gl.uniform1f(shaderProgram.power, power);
+	
     }
 
 
@@ -811,6 +833,9 @@ void main()
   Camera Position: X:<input type="text" id="cameraPosX" value="0.0" />
   Y:<input type="text" id="cameraPosY" value="0.0" />
   Z:<input type="text" id="cameraPosZ" value="2.0" /> <br/>
+
+  Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" checked/>
+  Power: <input type="text" id="power" value="8" /> <br/>
 
     <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
 </body>
