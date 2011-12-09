@@ -663,10 +663,9 @@ void main()
   var cameraRotation = mat4.create();
   mat4.identity(cameraRotation);
   var cameraPosition = [0.0, 0.0, 2.0];
-  var cameraMatrix = mat4.create();
-  mat4.identity(cameraMatrix);
+  
   //mat4.translate(cameraRotation, [1.0, 0.05, 2.0]);
-  //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0]);
+  //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0])
     function handleKeyDown(event) {
 	  	currentlyPressedKeys[event.keyCode] = true;
   	}
@@ -678,74 +677,120 @@ void main()
     function handleKeys() {
       var newRotation = mat4.create();
       mat4.identity(newRotation);
+
+//pitch
       if (currentlyPressedKeys[73]) {
         //  i
         mat4.rotate(newRotation, 0.1, [1.0, 0.0, 0.0]);
       }
-        if (currentlyPressedKeys[74]) {
-          //  j
-          mat4.rotate(newRotation, -0.1, [0.0, 1.0, 0.0]);
-        }
       if (currentlyPressedKeys[75]) {
         //  k
         mat4.rotate(newRotation, -0.1, [1.0, 0.0, 0.0]);
       }
+ //yaw
+    if (currentlyPressedKeys[74]) {
+          //  j
+          mat4.rotate(newRotation, -0.1, [0.0, 1.0, 0.0]);
+        }
       if (currentlyPressedKeys[76]) {
         // l
         mat4.rotate(newRotation, 0.1, [0.0, 1.0, 0.0]);
       }
+//roll
+      if (currentlyPressedKeys[85]) {
+        //  u
+        mat4.rotate(newRotation, 0.1, [0.0, 0.0, 1.0]);
+      }
+      if (currentlyPressedKeys[79]) {
+        // o
+        mat4.rotate(newRotation, -0.1, [0.0, 0.0, 1.0]);
+      }
+
       //set cameraRotation based on new input
       mat4.multiply(newRotation, cameraRotation, cameraRotation);
-      mat4.multiply(cameraMatrix, newRotation);
-      mat4.multiply(cameraRotation, newRotation, newRotation);
+
+//use the inverse to compute movement
+    var inverseMatrix = mat4.create();
+    mat4.inverse(cameraRotation, inverseMatrix);
+
       //create a vector coming out from the camera to determine which way to move
-      var cameraDir = [0.0, 0.0, -1.0];
-      mat4.multiplyVec3(cameraMatrix, cameraDir);
+//for in and out movement
+      var zDir = [0.0, 0.0, 1.0];
+      mat4.multiplyVec3(inverseMatrix, zDir);
       
       if (currentlyPressedKeys[87]) {
         // w
-        cameraPosition[0] -= 0.1 * cameraDir[0];
-        cameraPosition[1] -= 0.1 * cameraDir[1] ;
-        cameraPosition[2] += 0.1 * cameraDir[2];
+        cameraPosition[0] -= 0.1 * zDir[0];
+        cameraPosition[1] -= 0.1 * zDir[1] ;
+        cameraPosition[2] -= 0.1 * zDir[2];
       }
       if (currentlyPressedKeys[83]) {
         // s
-        cameraPosition[0] += 0.1 * cameraDir[0];
-        cameraPosition[1] += 0.1 * cameraDir[1];
-        cameraPosition[2] -= 0.1 * cameraDir[2];
+        cameraPosition[0] += 0.1 * zDir[0];
+        cameraPosition[1] += 0.1 * zDir[1];
+        cameraPosition[2] += 0.1 * zDir[2];
       }
       
       //now create a vector pointing to the right as the camera would see it
-      var xDir = [-1.0, 0.0, 0.0];
-      mat4.multiplyVec3(cameraMatrix, xDir);
+//for left-right movement
+      var xDir = [1.0, 0.0, 0.0];
+      mat4.multiplyVec3(inverseMatrix, xDir);
       
       if (currentlyPressedKeys[65]) {
         // a
-        cameraPosition[0] += 0.1 * xDir[0];
-        cameraPosition[1] += 0.1 * xDir[1];
+        cameraPosition[0] -= 0.1 * xDir[0];
+        cameraPosition[1] -= 0.1 * xDir[1];
         cameraPosition[2] -= 0.1 * xDir[2];
       }
       
       if (currentlyPressedKeys[68]) {
         // d
-        cameraPosition[0] -= 0.1 * xDir[0];
-        cameraPosition[1] -= 0.1 * xDir[1];
+        cameraPosition[0] += 0.1 * xDir[0];
+        cameraPosition[1] += 0.1 * xDir[1];
         cameraPosition[2] += 0.1 * xDir[2];
       }
-      document.getElementById("cameraDirectionX").value = xDir[0];
-      document.getElementById("cameraDirectionY").value = xDir[1];
-      document.getElementById("cameraDirectionZ").value = xDir[2];
+
+//calculate up vector for elevator movement
+    var yDir = [0.0, 1.0, 0.0];
+      mat4.multiplyVec3(inverseMatrix, yDir);
       
-      document.getElementById("cameraPosX").value = cameraPosition[0];
-      document.getElementById("cameraPosY").value = cameraPosition[1];
-      document.getElementById("cameraPosZ").value = cameraPosition[2];
+      if (currentlyPressedKeys[69]) {
+        // e
+        cameraPosition[0] -= 0.1 * yDir[0];
+        cameraPosition[1] -= 0.1 * yDir[1];
+        cameraPosition[2] -= 0.1 * yDir[2];
+      }
+      
+      if (currentlyPressedKeys[67]) {
+        // c
+        cameraPosition[0] += 0.1 * yDir[0];
+        cameraPosition[1] += 0.1 * yDir[1];
+        cameraPosition[2] += 0.1 * yDir[2];
+      }
+      document.getElementById("cameraDirectionX").value = Math.round(zDir[0] * 100)/100;
+      document.getElementById("cameraDirectionY").value = Math.round(zDir[1] * 100)/100;
+      document.getElementById("cameraDirectionZ").value = Math.round(zDir[2] * 100)/100;
+      
+      document.getElementById("cameraPosX").value = Math.round(cameraPosition[0] * 100)/100;
+      document.getElementById("cameraPosY").value = Math.round(cameraPosition[1] * 100)/100;
+      document.getElementById("cameraPosZ").value = Math.round(cameraPosition[2] * 100)/100;
     }
     var rTri = 0;
     var rSquare = 0;
     var time = 0.0;
+//<<<<<<< HEAD
     var power;
 
+//=======
+    var lastFPS = 0.0;
+    var smoothFPS = 0;
+//>>>>>>> f3a57e6bbc0ad2ffe86aaf5e68b0ef95afdb566a
     function drawScene() {
+    if(smoothFPS % 10 == 0){
+      document.getElementById("fps").value = Math.round(1000000/(time - lastFPS))/100 ;
+      lastFPS = time;
+    }
+    smoothFPS += 1;
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -825,7 +870,7 @@ void main()
     <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
 
     <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
-
+    FPS:<input type="text" id="fps" value="0.0"  />
     <br/>
   Camera Direction: X:<input type="text" id="cameraDirectionX" value="0.0" />
   Y:<input type="text" id="cameraDirectionY" value="0.0" />
