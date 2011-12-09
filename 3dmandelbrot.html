@@ -95,15 +95,17 @@ uniform  mat3 viewRotation;
 uniform float power;
 uniform int maxIterations; //user defined max iterations, does no good over maxIterationsLimit
 const int   maxIterationsLimit = 50;
+uniform int antialiasing;
+uniform bool julia;
 
 float ftime = float(time); 	
   
 const int width = 500;
 const int height = 500;
 const float pixelSize = 1.0;
-const int  antialiasing = 0;
+//const int  antialiasing = 0;
 const bool  phong = true;
- bool  julia = false;
+// bool  julia = false;
  bool  radiolaria = false;
 const float shadows = 0.6496;
 const float radiolariaFactor = 0.0;
@@ -197,7 +199,7 @@ vec3 eye = (camera + cameraFine) * objRotation;
 
 
 // Super sampling
-const float sampleStep = 1.0 / float(antialiasing + 1);
+float sampleStep = 1.0 / float(antialiasing + 1);
 float sampleContribution = 1.0 / pow(float(antialiasing + 1), 2.0);
 float pixel_scale = 1.0 / max(size.x, size.y);
 
@@ -495,9 +497,18 @@ void main()
 	
 	if (antialiasing > 0) {
 		// Average detailSuperSample^2 points per pixel
-		for (float i = 0.0; i < 1.0; i += sampleStep)
-			for (float j = 0.0; j < 1.0; j += sampleStep)
+		float i = 0.0;
+		float j;
+		for (int iindex = 0; iindex<4; iindex++){
+			if(i>=1.0){break;}
+			i += sampleStep;
+			j=0.0;
+			for (int jindex = 0; jindex<4; jindex++){
+				if(j>=1.0){break;}
+				j += sampleStep;
 				c += sampleContribution * renderPixel(p + vec2(i, j));
+			}
+		}
 	} else {
 		c = renderPixel(p);
 	}
@@ -611,6 +622,8 @@ void main()
 
 	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
       shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
+	shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
+	shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
 	
         shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
         shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
@@ -863,6 +876,8 @@ void main()
     var rTri = 0;
     var rSquare = 0;
     var time = 0.0;
+git 
+    var julia;
 
     var lastFPS = 0.0;
     var smoothFPS = 0;
@@ -911,6 +926,10 @@ void main()
 	}
 	
 	gl.uniform1f(shaderProgram.power, power);
+
+	gl.uniform1i(shaderProgram.antialiasing, document.getElementById("antialiasing").value);
+
+	gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
 	
     }
 
@@ -971,6 +990,15 @@ void main()
   <input id="maxIterations" type="range" min="0" max="50" value="10" step="1" 
 	 onchange="showValue('iterationValue', this.value)" />
   <span id="iterationValue">10</span> <br/>
+
+  Antialiasing (minimizes distortion):
+  <input id="antialiasing" type="range" min="0" max="2" value="0" step="1"
+	onchange="showValue('antialiasingValue', this.value)" />
+
+  <span id="antialiasingValue">0</span> <br/>
+
+  Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
+  Julia <input id="julia" type="radio" name="fractalGroup" /><br/>
 
     <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
 </body>
