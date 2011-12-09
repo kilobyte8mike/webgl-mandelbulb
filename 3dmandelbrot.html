@@ -776,7 +776,7 @@ void main()
     var smoothFPS = 0;
     function drawScene() {
     if(smoothFPS % 10 == 0){
-      document.getElementById("fps").value = 1000/(time - lastFPS);
+      document.getElementById("fps").value = 10000/(time - lastFPS);
       lastFPS = time;
     }
     smoothFPS += 1;
