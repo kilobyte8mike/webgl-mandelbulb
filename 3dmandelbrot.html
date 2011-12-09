@@ -128,7 +128,7 @@ float power = 8.0 + cos(ftime / 10000.0) * 4.0;
 vec3 rotation = vec3(0.0, 0.0 , 0.0); 
 const int   maxIterations = 8;
 const int   stepLimit = 125;
-const float epsilonScale = 1.0;
+const float epsilonScale = 1.0; 
 
 
 
@@ -657,6 +657,8 @@ void main()
   var cameraRotation = mat4.create();
   mat4.identity(cameraRotation);
   var cameraPosition = [0.0, 0.0, 2.0];
+  var cameraMatrix = mat4.create();
+  mat4.identity(cameraMatrix);
   //mat4.translate(cameraRotation, [1.0, 0.05, 2.0]);
   //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0]);
     function handleKeyDown(event) {
@@ -688,10 +690,11 @@ void main()
       }
       //set cameraRotation based on new input
       mat4.multiply(newRotation, cameraRotation, cameraRotation);
-      
+      mat4.multiply(cameraMatrix, newRotation);
+      mat4.multiply(cameraRotation, newRotation, newRotation);
       //create a vector coming out from the camera to determine which way to move
       var cameraDir = [0.0, 0.0, -1.0];
-      mat4.multiplyVec3(cameraRotation, cameraDir);
+      mat4.multiplyVec3(cameraMatrix, cameraDir);
       
       if (currentlyPressedKeys[87]) {
         // w
@@ -707,25 +710,25 @@ void main()
       }
       
       //now create a vector pointing to the right as the camera would see it
-      var xDir = [1.0, 0.0, 0.0];
-      mat4.multiplyVec3(cameraRotation, xDir);
+      var xDir = [-1.0, 0.0, 0.0];
+      mat4.multiplyVec3(cameraMatrix, xDir);
       
       if (currentlyPressedKeys[65]) {
         // a
-        cameraPosition[0] -= 0.1 * xDir[0];
+        cameraPosition[0] += 0.1 * xDir[0];
         cameraPosition[1] += 0.1 * xDir[1];
-        cameraPosition[2] += 0.1 * xDir[2];
+        cameraPosition[2] -= 0.1 * xDir[2];
       }
       
       if (currentlyPressedKeys[68]) {
         // d
-        cameraPosition[0] += 0.1 * xDir[0];
+        cameraPosition[0] -= 0.1 * xDir[0];
         cameraPosition[1] -= 0.1 * xDir[1];
-        cameraPosition[2] -= 0.1 * xDir[2];
+        cameraPosition[2] += 0.1 * xDir[2];
       }
-      document.getElementById("cameraDirectionX").value = cameraDir[0];
-      document.getElementById("cameraDirectionY").value = cameraDir[1];
-      document.getElementById("cameraDirectionZ").value = cameraDir[2];
+      document.getElementById("cameraDirectionX").value = xDir[0];
+      document.getElementById("cameraDirectionY").value = xDir[1];
+      document.getElementById("cameraDirectionZ").value = xDir[2];
       
       document.getElementById("cameraPosX").value = cameraPosition[0];
       document.getElementById("cameraPosY").value = cameraPosition[1];
