@@ -761,13 +761,13 @@ void main()
         cameraPosition[1] += 0.1 * yDir[1];
         cameraPosition[2] += 0.1 * yDir[2];
       }
-      document.getElementById("cameraDirectionX").value = zDir[0];
-      document.getElementById("cameraDirectionY").value = zDir[1];
-      document.getElementById("cameraDirectionZ").value = zDir[2];
+      document.getElementById("cameraDirectionX").value = Math.round(zDir[0] * 100)/100;
+      document.getElementById("cameraDirectionY").value = Math.round(zDir[1] * 100)/100;
+      document.getElementById("cameraDirectionZ").value = Math.round(zDir[2] * 100)/100;
       
-      document.getElementById("cameraPosX").value = cameraPosition[0];
-      document.getElementById("cameraPosY").value = cameraPosition[1];
-      document.getElementById("cameraPosZ").value = cameraPosition[2];
+      document.getElementById("cameraPosX").value = Math.round(cameraPosition[0] * 100)/100;
+      document.getElementById("cameraPosY").value = Math.round(cameraPosition[1] * 100)/100;
+      document.getElementById("cameraPosZ").value = Math.round(cameraPosition[2] * 100)/100;
     }
     var rTri = 0;
     var rSquare = 0;
@@ -776,7 +776,7 @@ void main()
     var smoothFPS = 0;
     function drawScene() {
     if(smoothFPS % 10 == 0){
-      document.getElementById("fps").value = 10000/(time - lastFPS);
+      document.getElementById("fps").value = Math.round(1000000/(time - lastFPS))/100 ;
       lastFPS = time;
     }
     smoothFPS += 1;
@@ -844,7 +844,7 @@ void main()
     <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
 
     <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
-    FPS:<input type="text" id="fps" value="0.0" />
+    FPS:<input type="text" id="fps" value="0.0"  />
     <br/>
   Camera Direction: X:<input type="text" id="cameraDirectionX" value="0.0" />
   Y:<input type="text" id="cameraDirectionY" value="0.0" />
