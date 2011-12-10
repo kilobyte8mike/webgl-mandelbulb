@@ -113,10 +113,15 @@ uniform int maxIterations; //user defined max iterations, does no good over maxI
 const int   maxIterationsLimit = 50;
 uniform int antialiasing;
 uniform bool julia;
-uniform bool noise;
+uniform bool uNoise;
 uniform bool phong;
 
 uniform sampler2D permTexture; //for simplex noise
+uniform bool uMarble;
+uniform float uLacunarity;
+uniform float uGain;
+uniform float uOctaves;
+  
 float ftime = float(time); 	
 
 
@@ -142,8 +147,8 @@ const float bailout = 4.0;
  float cameraZoom = 0.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
- vec4  diffuseColor = vec4(0.7, 0.7, 0.0, 1.0);
- vec4  ambientColor = vec4(0.0, 0.0, 0.9, 1.0);
+ vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
+ vec4  ambientColor = vec4(0.5, 0.5, 0.9, 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
  float rimLight = 1.0;
@@ -196,8 +201,8 @@ vec3 eye = (camera + cameraFine) * objRotation;
 
 
 // Super sampling
-float sampleStep = 1.0 / float(antialiasing + 1);
-float sampleContribution = 1.0 / pow(float(antialiasing + 1), 2.0);
+float sampleStep = 1.0 / float(antialiasing);
+float sampleContribution = 1.0 / pow(float(antialiasing), 2.0);
 float pixel_scale = 1.0 / max(size.x, size.y);
 
 
@@ -337,9 +342,24 @@ float ridgedmf(vec3 p, float lacunarity, float gain, float offset, float octaves
 	}
 	return sum;
 }
+  
+float marble(vec3 p, float lacunarity, float gain, float offset, float octaves)
+  {
+    float sum = 0.0;
+    float freq = 5.0, amp = 0.7;
+    float prev = 1.0;
+    for(float i=0.0 ; i < 1000.0; i++) {
+      if(i > octaves){break;}
+      float noise = abs(snoise(p*freq));
+      sum += noise * amp;
+      freq *= lacunarity;
+      amp *= gain;
+    }
+    return sin (p.x*10.0 + sum) * 0.33 + sin(p.y*10.0 + sum) * 0.33 +sin(p.z*10.0 + sum) * 0.33 ;
+  }
 float ridgedmfDefault(vec3 p, float octaves)
 {
-       return ridgedmf(p, power, 0.7, 1.0, octaves);
+       return ridgedmf(p, 2.0, .5, 1.0, octaves);
 }
 
 
@@ -622,8 +642,12 @@ vec4 renderPixel(vec2 pixel)
 				// Just use the base colour
 				pixel_color.rgb = diffuseColor.rgb;
 			}
-      if(noise){
-        float noise = ridgedmfDefault(ray, 3.0);
+      if(uNoise){
+        float noise ;
+        if(uMarble)
+          noise = marble(ray, uLacunarity, uGain, 1.0, uOctaves);
+        else
+          noise = ridgedmf(ray, uLacunarity, uGain, 1.0, uOctaves); 
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
 			ao *= 1.0 - (float(i) / float(max_steps)) * ambientOcclusionEmphasis * 2.0;
@@ -642,19 +666,19 @@ void main()
 	vec4 c = vec4(0, 0, 0, 1.0);
 	vec2 p = vec2(Position) * size;
 	
-	if (antialiasing > 0) {
+	if (antialiasing > 1) {
 		// Average detailSuperSample^2 points per pixel
 		float i = 0.0;
 		float j;
 		for (int iindex = 0; iindex<4; iindex++){
 			if(i>=1.0){break;}
-			i += sampleStep;
 			j=0.0;
 			for (int jindex = 0; jindex<4; jindex++){
 				if(j>=1.0){break;}
-				j += sampleStep;
 				c += sampleContribution * renderPixel(p + vec2(i, j));
+        j += sampleStep;
 			}
+      i += sampleStep;
 		}
 	} else {
 		c = renderPixel(p);
@@ -767,16 +791,19 @@ void main()
       shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
       shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
 
-	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
-      shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
-	shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
-	shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
-	shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
+    shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
+    shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
+    shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
+    shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
+    shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
     shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
-	shaderProgram.noise = gl.getUniformLocation(shaderProgram, "noise");
-
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+    shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
+    shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
+    shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
+    shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
+    shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
+    shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+    shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
     }
 
 
@@ -1122,10 +1149,15 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       setMatrixUniforms();
       
       //phong shading
-      gl.uniform1f(shaderProgram.phong, document.getElementById("phong").checked)
-      
+      gl.uniform1f(shaderProgram.phong, document.getElementById("phong").checked
+                 || document.getElementById("phongNoise").checked );      
       //noise uniforms
-    gl.uniform1f(shaderProgram.noise, document.getElementById("noise").checked);
+    gl.uniform1f(shaderProgram.noise, document.getElementById("noise").checked 
+                 || document.getElementById("phongNoise").checked );
+      gl.uniform1f(shaderProgram.marble, document.getElementById("marble").checked);
+      gl.uniform1f(shaderProgram.lacunarity, document.getElementById("lacunarity").value);
+      gl.uniform1f(shaderProgram.gain, document.getElementById("gain").value);
+      gl.uniform1f(shaderProgram.octaves, document.getElementById("octaves").value);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, permTexture);
     gl.uniform1i(shaderProgram.permSampler, 0);
@@ -1194,7 +1226,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 
 <body onload="webGLStart();">
-    <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
+    use "gamer" style controls<br />
+    w,a,s,d,e,c move forward, back, left, right, up, down <br/>
+    i,j,k,l,u,o rotate the currnet view up,left,down,right,roll right, roll left<br/>
 
     <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
     FPS:<input type="text" id="fps" value="0.0"  />
@@ -1209,18 +1243,26 @@ var perm = new Uint8Array([151,160,137,91,90,15,
   <span id="iterationValue">10</span> <br/>
 
   Antialiasing (minimizes distortion):
-  <input id="antialiasing" type="range" min="0" max="2" value="0" step="1"
-	onchange="showValue('antialiasingValue', this.value)" />
+  <input id="antialiasing" type="range" min="1" max="3" value="1" step="1"
+	onchange="showValue('antialiasingValue', this.value + "x")" />
 
   <span id="antialiasingValue">0</span> <br/>
 
   Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
   Julia <input id="julia" type="radio" name="fractalGroup" />
   
-  | Shading:
-  Phong <input id="phong" type="radio" name="shading" />
-  Noise <input id="noise" type="radio" name="shading" checked>
-  None <input id="none" type="radio" name="shading" /><br/>
+  ___|___ Shading:
+  both <input id="phongNoise" type="radio" name="shading" />
+  / Phong <input id="phong" type="radio" name="shading" />
+  / Noise <input id="noise" type="radio" name="shading" checked>
+  / None <input id="none" type="radio" name="shading" /><br/>
+    
+  Noise Specific:
+  marble <input id="marble" type="radio" name="noiseType" checked/>
+  original <input id="original" type="radio" name="noiseType" />
+  lacunarity  <input id="lacunarity" type="text" value="2.0" />
+  gain  <input id="gain" type="text" value="0.5"/>
+  octaves  <input id="octaves" type="text" value="50"/><br/>
 ------------Non settable fields--------------<br/>
   Camera Direction: X:<input type="text" id="cameraDirectionX" value="0.0" />
   Y:<input type="text" id="cameraDirectionY" value="0.0" />
