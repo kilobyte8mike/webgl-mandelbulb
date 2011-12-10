@@ -4,6 +4,78 @@
 <title>The Mandelbulb</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
+<style type="text/css">
+
+body{
+	width:1000px;
+	background-color:#EEEEEE;
+	border-style:ridge;
+	border-width:3px;
+	border-color:#999999;
+	margin: 0px auto 0px auto;
+}
+
+table.fullbody{
+	width:100%;
+	background-color:#739BC9;	
+	padding:10px;
+}
+
+div.canvas{
+	float:left;
+	width:500px;
+	margin-left:auto;
+	margin-right:auto;
+	border-style:ridge;
+	border-width:3px;
+	border-color:#999999;
+}
+
+
+div.stats{
+	margin-left:55%;
+	width:45%;
+}
+
+div.close{
+	clear:both;
+}
+
+div.header{
+	clear:both;
+	text-align:center;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+div.all{
+	float:left;
+	background-color:red;
+	width:33%;
+}
+
+div.phong{
+	float:left;
+	background-color:#00ff00;
+	width:34%;
+}
+
+div.noise{
+	float:right;
+	background-color:#ff00ff;
+	width:33%;
+}
+
+input.statBox{
+	border-width: 0px;
+	background-color: #739BC9;
+}
+
+
+	
+
+</style>
+
 <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
@@ -115,6 +187,11 @@ uniform int antialiasing;
 uniform bool julia;
 uniform bool uNoise;
 uniform bool phong;
+uniform bool normalLighting;
+uniform float colorChange;
+uniform float ambientRed;
+uniform float ambientGreen;
+uniform float ambientBlue;
 
 uniform sampler2D permTexture; //for simplex noise
 uniform bool uMarble;
@@ -148,7 +225,7 @@ const float bailout = 4.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
  vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
- vec4  ambientColor = vec4(0.5, 0.5, 0.9, 1.0);
+ vec4  ambientColor = vec4(ambientRed*cos(colorChange*ftime/500.0), ambientGreen*cos(colorChange*ftime/600.0), ambientBlue*cos(colorChange*ftime/1000.0), 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
  float rimLight = 1.0;
@@ -383,6 +460,7 @@ float ridgedmfDefault(vec3 p, float octaves)
 //
 //   0.5 * |z| * log(|z|) / |dz|
 //
+int colorVariable;
 float DE(vec3 z0, inout float min_dist)
 {
 	vec3 c = julia ? julia_c : z0; // Julia set has fixed c, Mandelbrot c changes with location
@@ -405,6 +483,7 @@ float DE(vec3 z0, inout float min_dist)
 
 	// Iterate to compute the distance estimator.
 	for (int n = 0; n < maxIterationsLimit; n++) {
+		colorVariable = n;
 		if(n >= maxIterations)
 		  break;
 		// Calculate derivative of
@@ -650,6 +729,9 @@ vec4 renderPixel(vec2 pixel)
           noise = ridgedmf(ray, uLacunarity, uGain, 1.0, uOctaves); 
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
+			if(normalLighting){   //using no lighting
+				pixel_color.rgb = estimate_normal(ray, eps/2.5);
+			}
 			ao *= 1.0 - (float(i) / float(max_steps)) * ambientOcclusionEmphasis * 2.0;
 			pixel_color.rgb *= ao;
 			pixel_color.a = 1.0;
@@ -788,22 +870,29 @@ void main()
         gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
 	shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
-      shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
-      shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
 
-    shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
-    shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
-    shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
-    shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
-    shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
-    shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
-    shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
-    shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
-    shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
-    shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
-    shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
-    shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-    shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
+        shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
+        shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
+
+    	shaderProgram.colorChange = gl.getUniformLocation(shaderProgram, "colorChange");
+    	shaderProgram.ambientRed = gl.getUniformLocation(shaderProgram, "ambientRed");
+    	shaderProgram.ambientGreen = gl.getUniformLocation(shaderProgram, "ambientGreen");
+    	shaderProgram.ambientBlue = gl.getUniformLocation(shaderProgram, "ambientBlue");
+
+	shaderProgram.normalLighting = gl.getUniformLocation(shaderProgram, "normalLighting");
+    	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
+    	shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
+    	shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
+    	shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
+    	shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
+    	shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
+    	shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
+    	shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
+    	shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
+    	shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
+    	shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
+    	shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+    	shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
     }
 
 
@@ -1161,6 +1250,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, permTexture);
     gl.uniform1i(shaderProgram.permSampler, 0);
+
+		//normal lighting
+		gl.uniform1f(shaderProgram.normalLighting, document.getElementById("normal").checked);
       
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 
@@ -1183,6 +1275,18 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	gl.uniform1i(shaderProgram.antialiasing, document.getElementById("antialiasing").value);
 
 	gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
+
+
+	colorChange = document.getElementById("colorChange").value;
+	gl.uniform1f(shaderProgram.colorChange, colorChange);
+
+	ambientRed = document.getElementById("ambientRed").value;
+	ambientGreen = document.getElementById("ambientGreen").value;
+	ambientBlue = document.getElementById("ambientBlue").value;
+
+	gl.uniform1f(shaderProgram.ambientRed, ambientRed);
+	gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
+	gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
 	
     }
 
@@ -1226,27 +1330,93 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 
 <body onload="webGLStart();">
-    use "gamer" style controls<br />
-    w,a,s,d,e,c move forward, back, left, right, up, down <br/>
-    i,j,k,l,u,o rotate the currnet view up,left,down,right,roll right, roll left<br/>
 
-    <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
-    FPS:<input type="text" id="fps" value="0.0"  />
-    <br/>
+<!-- The end of the full body table -->
+<table class="fullbody"><tr><td>
 
-  Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" checked/>
-  Power: <input type="text" id="power" value="8" /> <br/>
+
+<div class="header">
+	<h1>MandelBulb</h4>
+	<h3>By: Michael Jewell, Jesse Altman, Shane Christy, Kayla Artinyan</h3>
+	<hr width="65%" />
+	<br />
+</div>
+
+<div class="canvas">    
+	<canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
+</div>
+
+<div class="stats">
+
+	<h2>Current Statistics</h2>
+	<u>FPS:</u> <input type="text" id="fps" value="0.0" size="8"  class="statBox"/>
+
+	<br /><br />
+
+	<u>Camera Direction:</u>&nbsp;&nbsp;
+	X:&nbsp;&nbsp;<input type="text" id="cameraDirectionX" value="0.0" size="6" class="statBox" />
+	Y:&nbsp;&nbsp;<input type="text" id="cameraDirectionY" value="0.0" size="6" class="statBox" />
+	Z:&nbsp;&nbsp;<input type="text" id="cameraDirectionZ" value="-1.0" size="6" class="statBox" /> <br/>
+	
+	<u>Camera Position:</u>&nbsp;&nbsp;&nbsp;&nbsp;
+	X:&nbsp;&nbsp;<input type="text" id="cameraPosX" value="0.0" size="6" class="statBox" />
+	Y:&nbsp;&nbsp;<input type="text" id="cameraPosY" value="0.0" size="6" class="statBox" />
+	Z:&nbsp;&nbsp;<input type="text" id="cameraPosZ" value="2.0" size="6" class="statBox" /> <br/>
+	<br />
+	<u>Camera Distance to fractal:</u> <input type="text" id="cameraDistance" value="0.0" class="statBox" /> <br/>
+
+	<br />
+	<h2>Controls:</h2>
+	use "gamer" style controls<br />
+	w,a,s,d,e,c move forward, back, left, right, up, down <br/>
+	i,j,k,l,u,o rotate the currnet view up,left,down,right,roll right, roll left<br/>
+
+
+
+</div>
+
+<div class="close">
+	<br />
+</div>
+
+<div class="all">
+	<br />all<br /><br />
+</div>
+
+<div class="phong">
+	<br />phong<br /><br />
+</div>
+
+<div class="noise">
+	<br />noise<br /><br />
+</div>
+
+<div class="close">
+	<br />
+</div>
+
+<br/>
+
+	Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" /><br/>
+	Power: <input type="text" id="power" value="8" />
 
   Max Iterations (provides finer detail):
   <input id="maxIterations" type="range" min="0" max="50" value="10" step="1" 
 	 onchange="showValue('iterationValue', this.value)" />
   <span id="iterationValue">10</span> <br/>
 
-  Antialiasing (minimizes distortion):
+  Antialiasing (minimizes distortion / slows rendering exponentially):
   <input id="antialiasing" type="range" min="1" max="3" value="1" step="1"
 	onchange="showValue('antialiasingValue', this.value )" />
 
-   <span id="antialiasingValue">1</span>x<br/>
+
+  <span id="antialiasingValue">1</span>x<br/>
+
+  Color Change <input type="text" id="colorChange" value="1" /> 
+  Ambient Red: <input type="text" id="ambientRed" value="0.5" /> 
+  Ambient Green: <input type="text" id="ambientGreen" value="0.5" /> 
+  Ambient Blue: <input type="text" id="ambientBlue" value="0.9" /> <br/>
+
 
   Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
   Julia <input id="julia" type="radio" name="fractalGroup" />
@@ -1255,6 +1425,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
   both <input id="phongNoise" type="radio" name="shading" />
   / Phong <input id="phong" type="radio" name="shading" />
   / Noise <input id="noise" type="radio" name="shading" checked>
+	/ Normals <input id="normal" type="radio" name="shading" />
   / None <input id="none" type="radio" name="shading" /><br/>
     
   Noise Specific:
@@ -1263,16 +1434,11 @@ var perm = new Uint8Array([151,160,137,91,90,15,
   lacunarity  <input id="lacunarity" type="text" value="2.0" />
   gain  <input id="gain" type="text" value="0.5"/>
   octaves  <input id="octaves" type="text" value="50"/><br/>
-------------Non settable fields--------------<br/>
-  Camera Direction: X:<input type="text" id="cameraDirectionX" value="0.0" />
-  Y:<input type="text" id="cameraDirectionY" value="0.0" />
-  Z:<input type="text" id="cameraDirectionZ" value="-1.0" /> <br/>
-  Camera Position: X:<input type="text" id="cameraPosX" value="0.0" />
-  Y:<input type="text" id="cameraPosY" value="0.0" />
-  Z:<input type="text" id="cameraPosZ" value="2.0" /> <br/>
-  Camera Distance to fractal:<input type="text" id="cameraDistance" value="0.0" /> <br/>
 
-    <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
+
+<!-- The end of the full body table -->
+</td></tr></table>
+
 </body>
 
 </html>
