@@ -1242,11 +1242,11 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	 onchange="showValue('iterationValue', this.value)" />
   <span id="iterationValue">10</span> <br/>
 
-  Antialiasing (minimizes distortion):
+  Antialiasing (minimizes distortion / slows rendering exponentially):
   <input id="antialiasing" type="range" min="1" max="3" value="1" step="1"
-	onchange="showValue('antialiasingValue', this.value + "x")" />
+	onchange="showValue('antialiasingValue', this.value )" />
 
-  <span id="antialiasingValue">0</span> <br/>
+  <span id="antialiasingValue">1</span>x<br/>
 
   Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
   Julia <input id="julia" type="radio" name="fractalGroup" />
