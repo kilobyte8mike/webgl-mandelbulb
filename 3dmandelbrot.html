@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Learning WebGL &mdash; lesson 3</title>
+<title>The Mandelbulb</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
@@ -12,7 +12,14 @@
     precision highp float;
     #endif
 
-    /**
+/** 
+ 3dmandelbrot was put together by:
+ Michael Jewell <michael.jewell@maine.edu>,  
+ Jesse Altman <jesse.altman@maine.edu>,
+ Shane Christy <shane.christy@maine.edu>,
+ Kayla Christina Artinyan <kayla.artinyan@maine.edu> from the universtiy of southern maine for Bruce Macleods Interactive Graphics course
+ 
+ The origin of our mandelbulb equations:
  * Mandelbulb.pbk
  * Last update: 14 December 2009
  *
@@ -52,6 +59,15 @@
  * and the NVIDIA CUDA/OptiX implementation by cbuchner1:
  * http://forums.nvidia.com/index.php?showtopic=150985
  *
+ *  -- noise provided by --
+ *The following is noise calculations are provided from
+ * Original noise Author: Stefan Gustavson ITN-LiTH (stegu@itn.liu.se) 2004-12-05
+ * Simplex indexing functions by Bill Licea-Kane, ATI
+ *
+ * You may use, modify and redistribute this code free of charge,
+ * provided that the author's names and this notice appear intact.
+ *
+ * The code was hosted at http://www.pcprogramming.com/NoiseCube.html
  */
 
 /*
@@ -184,13 +200,7 @@ float sampleStep = 1.0 / float(antialiasing + 1);
 float sampleContribution = 1.0 / pow(float(antialiasing + 1), 2.0);
 float pixel_scale = 1.0 / max(size.x, size.y);
 
-/*The following is noise calculations are provided from
- * Original noise Author: Stefan Gustavson ITN-LiTH (stegu@itn.liu.se) 2004-12-05
- * Simplex indexing functions by Bill Licea-Kane, ATI
- *
- * You may use, modify and redistribute this code free of charge,
- * provided that the author's names and this notice appear intact.
-*/
+
 /*
  * To create offsets of one texel and one half texel in the
  * texture lookup, we need to know the texture image size.
@@ -1065,9 +1075,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       document.getElementById("cameraDirectionY").value = Math.round(zDir[1] * 100)/100;
       document.getElementById("cameraDirectionZ").value = Math.round(zDir[2] * 100)/100;
       
-      document.getElementById("cameraPosX").value = Math.round(cameraPosition[0] * 100)/100;
-      document.getElementById("cameraPosY").value = Math.round(cameraPosition[1] * 100)/100;
-      document.getElementById("cameraPosZ").value = Math.round(cameraPosition[2] * 100)/100;
+      document.getElementById("cameraPosX").value = -Math.round(cameraPosition[0] * 100)/100;
+      document.getElementById("cameraPosY").value = -Math.round(cameraPosition[1] * 100)/100;
+      document.getElementById("cameraPosZ").value = -Math.round(cameraPosition[2] * 100)/100;
 
       
     }
