@@ -115,6 +115,7 @@ uniform int antialiasing;
 uniform bool julia;
 uniform bool uNoise;
 uniform bool phong;
+uniform bool normalLighting;
 
 uniform sampler2D permTexture; //for simplex noise
 uniform bool uMarble;
@@ -147,7 +148,7 @@ const float bailout = 4.0;
  float cameraZoom = 0.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
- vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
+ vec4  diffuseColor = vec4(1.0, 0.7, 0.0, 1.0);
  vec4  ambientColor = vec4(0.5, 0.5, 0.9, 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
@@ -383,6 +384,7 @@ float ridgedmfDefault(vec3 p, float octaves)
 //
 //   0.5 * |z| * log(|z|) / |dz|
 //
+int colorVariable;
 float DE(vec3 z0, inout float min_dist)
 {
 	vec3 c = julia ? julia_c : z0; // Julia set has fixed c, Mandelbrot c changes with location
@@ -405,6 +407,7 @@ float DE(vec3 z0, inout float min_dist)
 
 	// Iterate to compute the distance estimator.
 	for (int n = 0; n < maxIterationsLimit; n++) {
+		colorVariable = n;
 		if(n >= maxIterations)
 		  break;
 		// Calculate derivative of
@@ -650,6 +653,9 @@ vec4 renderPixel(vec2 pixel)
           noise = ridgedmf(ray, uLacunarity, uGain, 1.0, uOctaves); 
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
+			if(normalLighting){   //using no lighting
+				pixel_color.rgb = estimate_normal(ray, eps/2.5);
+			}
 			ao *= 1.0 - (float(i) / float(max_steps)) * ambientOcclusionEmphasis * 2.0;
 			pixel_color.rgb *= ao;
 			pixel_color.a = 1.0;
@@ -802,6 +808,7 @@ void main()
     shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
     shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
     shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
+		shaderProgram.normalLighting = gl.getUniformLocation(shaderProgram, "normalLighting");
     shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
     }
@@ -1161,6 +1168,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, permTexture);
     gl.uniform1i(shaderProgram.permSampler, 0);
+
+		//normal lighting
+		gl.uniform1f(shaderProgram.normalLighting, document.getElementById("normal").checked);
       
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 
@@ -1255,6 +1265,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
   both <input id="phongNoise" type="radio" name="shading" />
   / Phong <input id="phong" type="radio" name="shading" />
   / Noise <input id="noise" type="radio" name="shading" checked>
+	/ Normals <input id="normal" type="radio" name="shading" />
   / None <input id="none" type="radio" name="shading" /><br/>
     
   Noise Specific:
