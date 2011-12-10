@@ -115,6 +115,10 @@ uniform int antialiasing;
 uniform bool julia;
 uniform bool uNoise;
 uniform bool phong;
+uniform float colorChange;
+uniform float ambientRed;
+uniform float ambientGreen;
+uniform float ambientBlue;
 
 uniform sampler2D permTexture; //for simplex noise
 uniform bool uMarble;
@@ -148,7 +152,7 @@ const float bailout = 4.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
  vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
- vec4  ambientColor = vec4(0.5, 0.5, 0.9, 1.0);
+ vec4  ambientColor = vec4(ambientRed*cos(colorChange*ftime/500.0), ambientGreen*cos(colorChange*ftime/600.0), ambientBlue*cos(colorChange*ftime/1000.0), 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
  float rimLight = 1.0;
@@ -788,22 +792,27 @@ void main()
         gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
 	shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
-      shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
-      shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
+        shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
+        shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
 
-    shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
-    shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
-    shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
-    shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
-    shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
-    shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
-    shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
-    shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
-    shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
-    shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
-    shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
-    shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-    shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
+    	shaderProgram.colorChange = gl.getUniformLocation(shaderProgram, "colorChange");
+    	shaderProgram.ambientRed = gl.getUniformLocation(shaderProgram, "ambientRed");
+    	shaderProgram.ambientGreen = gl.getUniformLocation(shaderProgram, "ambientGreen");
+    	shaderProgram.ambientBlue = gl.getUniformLocation(shaderProgram, "ambientBlue");
+
+    	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
+    	shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
+    	shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
+    	shaderProgram.julia = gl.getUniformLocation(shaderProgram, "julia");
+    	shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
+    	shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
+    	shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
+    	shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
+    	shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
+    	shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
+    	shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
+    	shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+    	shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
     }
 
 
@@ -1183,6 +1192,18 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	gl.uniform1i(shaderProgram.antialiasing, document.getElementById("antialiasing").value);
 
 	gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
+
+
+	colorChange = document.getElementById("colorChange").value;
+	gl.uniform1f(shaderProgram.colorChange, colorChange);
+
+	ambientRed = document.getElementById("ambientRed").value;
+	ambientGreen = document.getElementById("ambientGreen").value;
+	ambientBlue = document.getElementById("ambientBlue").value;
+
+	gl.uniform1f(shaderProgram.ambientRed, ambientRed);
+	gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
+	gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
 	
     }
 
@@ -1247,6 +1268,11 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	onchange="showValue('antialiasingValue', this.value + "x")" />
 
   <span id="antialiasingValue">0</span> <br/>
+
+  Color Change <input type="text" id="colorChange" value="1" /> 
+  Ambient Red: <input type="text" id="ambientRed" value="0.5" /> 
+  Ambient Green: <input type="text" id="ambientGreen" value="0.5" /> 
+  Ambient Blue: <input type="text" id="ambientBlue" value="0.9" /> <br/>
 
   Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
   Julia <input id="julia" type="radio" name="fractalGroup" />
