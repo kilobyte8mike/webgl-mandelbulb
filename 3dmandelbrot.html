@@ -819,7 +819,7 @@ void main()
 void main() 
 {
   if(uJustDE){
-    gl_Position =  vec4(-1.0, -1.0, -0.1, 1.0);//vec4(aVertexPosition / 500.0-vec3(0.9,0.9,0.0), 1.0);// vec4(.5, .5, 0.0, 1.0);
+    gl_Position =  vec4(-1.0 + 0.01 * aVertexPosition.x, -1.0 + 0.01* aVertexPosition.y, -0.1, 1.0);//vec4(aVertexPosition / 500.0-vec3(0.9,0.9,0.0), 1.0);// vec4(.5, .5, 0.0, 1.0);
  
     }
   else{
@@ -1242,7 +1242,8 @@ var perm = new Uint8Array([151,160,137,91,90,15,
    
       //set the bottom left pixel to encode distance
       gl.uniform1f(shaderProgram.justDE, true);  
-      gl.drawArrays(gl.POINTS , 0, 1);
+      //gl.drawArrays(gl.POINTS , 0, 1);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
       var deArr = new Uint8Array(4);
       gl.readPixels(0 , 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, deArr);
       
