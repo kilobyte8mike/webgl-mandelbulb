@@ -177,6 +177,7 @@ uniform int   maxIterations;
 uniform int   stepLimit;
 uniform float epsilonScale;
 */
+uniform bool uJustDE;
 uniform int time;
 uniform vec3 camera;
 uniform  mat3 viewRotation;
@@ -748,25 +749,37 @@ void main()
 {
 	vec4 c = vec4(0, 0, 0, 1.0);
 	vec2 p = vec2(Position) * size;
-	
-	if (antialiasing > 1) {
-		// Average detailSuperSample^2 points per pixel
-		float i = 0.0;
-		float j;
-		for (int iindex = 0; iindex<4; iindex++){
-			if(i>=1.0){break;}
-			j=0.0;
-			for (int jindex = 0; jindex<4; jindex++){
-				if(j>=1.0){break;}
-				c += sampleContribution * renderPixel(p + vec2(i, j));
-        j += sampleStep;
-			}
-      i += sampleStep;
-		}
-	} else {
-		c = renderPixel(p);
+	if(uJustDE){
+    float min_dist = 4.0; //unused
+    float dist = DE(camera, min_dist);
+    float gVal = dist*255.0;
+    float bVal = gVal*255.0;
+    
+    dist = clamp(dist, 0.0, 1.0);
+    gVal = clamp(gVal, 0.0, 1.0);
+    bVal = clamp(bVal, 0.0, 1.0);
+    c = vec4(dist, gVal, bVal, 1.0);
+  }
+  
+  else{
+    if (antialiasing > 1) {
+      // Average detailSuperSample^2 points per pixel
+      float i = 0.0;
+      float j;
+      for (int iindex = 0; iindex<4; iindex++){
+        if(i>=1.0){break;}
+        j=0.0;
+        for (int jindex = 0; jindex<4; jindex++){
+          if(j>=1.0){break;}
+          c += sampleContribution * renderPixel(p + vec2(i, j));
+          j += sampleStep;
+        }
+        i += sampleStep;
+      }
+    } else {
+      c = renderPixel(p);
+    }
 	}
-	
 	if (c.a <= 0.0) discard;
 	
 	// Return the final color which is still the background color if we didn't hit anything.
@@ -779,6 +792,7 @@ void main()
     attribute vec3 aVertexPosition;
     attribute vec4 aVertexColor;
 
+    uniform bool uJustDE;
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
 
@@ -786,10 +800,15 @@ void main()
 
 void main() 
 {
-	gl_Position = vec4(aVertexPosition, 1.0);//ftransform();
-	//gl_FrontColor = gl_Color;
-	//gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	Position = vec3((aVertexPosition.x + 1.0) / 2.0,(aVertexPosition.y + 1.0) / 2.0, 0.0);//vec3(gl_MultiTexCoord0);
+  if(uJustDE){
+    gl_Position =  vec4(-1.0, -1.0, -0.1, 1.0);//vec4(aVertexPosition / 500.0-vec3(0.9,0.9,0.0), 1.0);// vec4(.5, .5, 0.0, 1.0);
+ 
+    }
+  else{
+    gl_Position = vec4(aVertexPosition, 1.0);
+   
+  }
+	Position = vec3((aVertexPosition.x + 1.0) / 2.0, (aVertexPosition.y + 1.0) / 2.0, 0.0);//
 }
 </script>
 
@@ -894,6 +913,7 @@ void main()
     	shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
     	shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     	shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
+      shaderProgram.justDE = gl.getUniformLocation(shaderProgram,"uJustDE");
     }
 
 
@@ -1079,7 +1099,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
   var cameraRotation = mat4.create();
   mat4.identity(cameraRotation);
   var cameraPosition = [0.0, 0.0, 3.0];
-  
+  var distToSurface = 0.0;
   //mat4.translate(cameraRotation, [1.0, 0.05, 2.0]);
   //mat4.rotate(cameraRotation, 0.0, [0.0, 0.0, 0.0])
     function handleKeyDown(event) {
@@ -1134,9 +1154,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       var zDir = [0.0, 0.0, 1.0];
       mat4.multiplyVec3(inverseMatrix, zDir);
       
-      var dist = DE(cameraPosition); 
-      document.getElementById("cameraDistance").value = dist;
-      dist = Math.min(dist/3 , .1);
+      //var dist = DE(cameraPosition); //unused since distance is computed in shader now
+ 
+      dist = distToSurface/5
       var zDir = [0.0, 0.0, 1.0];
       mat4.multiplyVec3(inverseMatrix, zDir);
       if (currentlyPressedKeys[87]) {
@@ -1254,10 +1274,23 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 		//normal lighting
 		gl.uniform1f(shaderProgram.normalLighting, document.getElementById("normal").checked);
+   
+     
+      //draw the mandelbulb
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+   
+      //set the bottom left pixel to encode distance
+      gl.uniform1f(shaderProgram.justDE, true);  
+      gl.drawArrays(gl.POINTS , 0, 1);
+      var deArr = new Uint8Array(4);
+      gl.readPixels(0 , 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, deArr);
       
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
-
-        mvPopMatrix();
+      distToSurface = deArr[0] / 255.0 + deArr[1] / (255.0 * 255.0) + deArr[2] / (255.0 * 255 *255);
+      document.getElementById("cameraDistance").value = distToSurface;
+      gl.uniform1f(shaderProgram.justDE, false);  
+      
+      mvPopMatrix();
+      
 
 	gl.uniform1i(shaderProgram.maxIterations, document.getElementById("maxIterations").value);
 	
