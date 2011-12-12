@@ -813,8 +813,6 @@ void main()
     attribute vec4 aVertexColor;
 
     uniform bool uJustDE;
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
 
     varying vec3 Position;
 
@@ -889,13 +887,12 @@ void main()
     var shaderProgram;
 
     function initShaders() {
-        var fragmentShader = getShader(gl, "shader-fs");
-        var vertexShader = getShader(gl, "shader-vs");
-
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+      var fragmentShader = getShader(gl, "shader-fs");
+      var vertexShader = getShader(gl, "shader-vs");
+      shaderProgram = gl.createProgram();
+      gl.attachShader(shaderProgram, vertexShader);
+      gl.attachShader(shaderProgram, fragmentShader);
+      gl.linkProgram(shaderProgram);
 
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
@@ -909,7 +906,7 @@ void main()
         shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
         gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
-	shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
+        shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
 
         shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
         shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
@@ -919,7 +916,7 @@ void main()
     	shaderProgram.ambientGreen = gl.getUniformLocation(shaderProgram, "ambientGreen");
     	shaderProgram.ambientBlue = gl.getUniformLocation(shaderProgram, "ambientBlue");
 
-	shaderProgram.normalLighting = gl.getUniformLocation(shaderProgram, "normalLighting");
+      shaderProgram.normalLighting = gl.getUniformLocation(shaderProgram, "normalLighting");
     	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
     	shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
     	shaderProgram.antialiasing = gl.getUniformLocation(shaderProgram, "antialiasing");
@@ -931,34 +928,9 @@ void main()
     	shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
     	shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
     	shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
-    	shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-    	shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
       shaderProgram.justDE = gl.getUniformLocation(shaderProgram,"uJustDE");
     }
 
-
-    var mvMatrix = mat4.create();
-    var mvMatrixStack = [];
-    var pMatrix = mat4.create();
-
-    function mvPushMatrix() {
-        var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
-        mvMatrixStack.push(copy);
-    }
-
-    function mvPopMatrix() {
-        if (mvMatrixStack.length == 0) {
-            throw "Invalid popMatrix!";
-        }
-        mvMatrix = mvMatrixStack.pop();
-    }
-
-
-    function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-    }
 
 
     function degToRad(degrees) {
@@ -1021,7 +993,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
   }
-
+  //end of items need for noise
 
     var squareVertexPositionBuffer;
 
@@ -1044,78 +1016,10 @@ var perm = new Uint8Array([151,160,137,91,90,15,
             total += vect[i] * vect[i];
         return Math.sqrt(total);
     }
-    
-    var maxIterationsLimit=50;
-    var power;
-    var bailout = 4.0;
-    var phase = [0.0, 0.0];
-    var julia_c = [0.95, 0.0, 0.0]
-    function DE( z0 ) {
-        var min_dist = 4.0
-	    var c = julia ? julia_c : [z0[0], z0[1], z0[2]]; // Julia set has fixed c, Mandelbrot c changes with location
-	    //var c = [z0[0], z0[1], z0[2]];
-        var z = [z0[0], z0[1], z0[2]];
-    	var pd = power - 1.0;			 // power for derivative
 
-    	// Convert z to polar coordinates
-    	var r  = length(z);
-       
-    	var th = Math.atan(z[1], z[0]);
-    	var ph = Math.asin(z[2] / r);
 
-    	// Record z orbit distance for ambient occulsion shading
-    	if (r < min_dist) min_dist = r;
-    
-    	var dz = [0.0, 0.0, 0.0];
-    	var ph_dz = 0.0;
-    	var th_dz = 0.0;
-    	var r_dz	= 1.0;
-    	var powR, powRsin;
-
-    	// Iterate to compute the distance estimator.
-    	for (var n = 0; n < maxIterationsLimit; n++) {
-    		if(n > document.getElementById("maxIterations").value)
-    		  break;
-    		// Calculate derivative of
-    		powR = power * Math.pow(r, pd);
-    		powRsin = powR * r_dz * Math.sin(ph_dz + pd*ph);
-    		dz[0] = powRsin * Math.cos(th_dz + pd*th) + 1.0;
-    		dz[1] = powRsin * Math.sin(th_dz + pd*th);
-    		dz[2] = powR * r_dz * Math.cos(ph_dz + pd*ph);
-            
-    		// polar coordinates of derivative dz
-    		r_dz  = length(dz);
-            
-    		th_dz = Math.atan(dz[1], dz[0]);
-    		ph_dz = Math.acos(dz[2] / r_dz);
-    
-    		// z iteration
-    		powR = Math.pow(r, power);
-    		powRsin = Math.sin(power*ph);
-    		z[0] = powR * powRsin * Math.cos(power*th) + c[0];
-    		z[1] = powR * powRsin * Math.sin(power*th) + c[1];
-    		z[2] = powR * Math.cos(power*ph) + c[2];
-    		
-    		// The triplex power formula applies the azimuthal angle rotation about the y-axis.
-    		// Constrain this to get some funky effects
-    		//if (radiolaria && z[1] > radiolariaFactor) z[1] = radiolariaFactor;
-
-    		r  = length(z);
-            
-    		if (r < min_dist) min_dist = r;
-    		if (r > bailout) break;
-
-    		th = Math.atan(z[1], z[0]) + phase[0];
-    		ph = Math.acos(z[2] / r) + phase[1];
-
-	}
-
-	// Return the distance estimation value which determines the next raytracing
-	// step size, or if whether we are within the threshold of the surface.
-    
-	return 0.5 * r * Math.log(r)/r_dz;
-}
-    var currentlyPressedKeys = {};
+  
+  var currentlyPressedKeys = {};
   var cameraRotation = mat4.create();
   mat4.identity(cameraRotation);
   var cameraPosition = [0.0, 0.0, 3.0];
@@ -1204,7 +1108,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       }
       
       //now create a vector pointing to the right as the camera would see it
-//for left-right movement
+      //for left-right movement
       var xDir = [1.0, 0.0, 0.0];
       mat4.multiplyVec3(inverseMatrix, xDir);
       
@@ -1222,8 +1126,8 @@ var perm = new Uint8Array([151,160,137,91,90,15,
         tempPosition[2] += dist * xDir[2];
       }
 
-//calculate up vector for elevator movement
-    var yDir = [0.0, 1.0, 0.0];
+      //calculate up vector for elevator movement
+      var yDir = [0.0, 1.0, 0.0];
       mat4.multiplyVec3(inverseMatrix, yDir);
       
       if (currentlyPressedKeys[69]) {
@@ -1259,55 +1163,80 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     var julia;
   
 	var aaValue = 1;
+  
+  
+  var power;
+  function setUniforms() {
+    gl.uniform1i(shaderProgram.time, time);
     
-    function drawScene() {
-
-	if(document.getElementById("stop").checked == false){
+    //camera
+    gl.uniform3fv(shaderProgram.camera, cameraPosition);
+    gl.uniformMatrix3fv(shaderProgram.viewRotation, false, mat4.toMat3(cameraRotation));
     
-        
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
-
-        mat4.identity(mvMatrix);
-
-        mat4.translate(mvMatrix, [0.0, 0.0, -3.0]);
-
-        mvPushMatrix();
-
-        mat4.rotate(mvMatrix, degToRad(rSquare), [1, 0, 0]);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-      gl.uniform1i(shaderProgram.time, time);
-      
-      //camera
-      gl.uniform3fv(shaderProgram.camera, cameraPosition);
-      gl.uniformMatrix3fv(shaderProgram.viewRotation, false, mat4.toMat3(cameraRotation));
-      
-      //obselete
-      setMatrixUniforms();
-      
-      //phong shading
-      gl.uniform1f(shaderProgram.phong, document.getElementById("phong").checked
+    
+    //phong shading
+    gl.uniform1f(shaderProgram.phong, document.getElementById("phong").checked
                  || document.getElementById("phongNoise").checked );      
-      //noise uniforms
+    //noise uniforms
     gl.uniform1f(shaderProgram.noise, document.getElementById("noise").checked 
                  || document.getElementById("phongNoise").checked );
-      gl.uniform1f(shaderProgram.marble, document.getElementById("marble").checked);
-      gl.uniform1f(shaderProgram.lacunarity, document.getElementById("lacunarity").value);
-      gl.uniform1f(shaderProgram.gain, document.getElementById("gain").value);
-      gl.uniform1f(shaderProgram.octaves, document.getElementById("octaves").value);
+    gl.uniform1f(shaderProgram.marble, document.getElementById("marble").checked);
+    gl.uniform1f(shaderProgram.lacunarity, document.getElementById("lacunarity").value);
+    gl.uniform1f(shaderProgram.gain, document.getElementById("gain").value);
+    gl.uniform1f(shaderProgram.octaves, document.getElementById("octaves").value);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, permTexture);
     gl.uniform1i(shaderProgram.permSampler, 0);
-
+    
 		//normal lighting
 		gl.uniform1f(shaderProgram.normalLighting, document.getElementById("normal").checked);
-   
-     
+    
+    gl.uniform1i(shaderProgram.maxIterations, document.getElementById("maxIterations").value);
+    
+    //changing of powers
+    if(document.getElementById("iteratePowers").checked==true){
+      power = 8.0 + Math.cos(time / 10000.0) * 4.0;
+      var trimPower = trimNum(power.toString());
+      document.getElementById("power").value = trimPower;
+      document.getElementById("power").className = "checked";
+    }else{
+      power = document.getElementById("power").value;
+      document.getElementById("power").className = "unchecked";
+    }
+    
+    gl.uniform1f(shaderProgram.power, power);
+    
+    gl.uniform1i(shaderProgram.antialiasing, aaValue);
+    
+    gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
+    
+    
+    colorChange = document.getElementById("colorChange").value;
+    gl.uniform1f(shaderProgram.colorChange, colorChange);
+    
+    ambientRed = document.getElementById("ambientRed").value;
+    ambientGreen = document.getElementById("ambientGreen").value;
+    ambientBlue = document.getElementById("ambientBlue").value;
+    
+    gl.uniform1f(shaderProgram.ambientRed, ambientRed);
+    gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
+    gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
+    
+
+
+  }
+    
+    function drawScene() {
+      gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      //load our square to draw on
+      gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+      gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    
+      //set uniforms in shader
+      setUniforms();
+
       //draw the mandelbulb
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
    
@@ -1320,44 +1249,10 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       distToSurface = deArr[0] / 255.0 + deArr[1] / (255.0 * 255.0) + deArr[2] / (255.0 * 255 *255);
       document.getElementById("cameraDistance").value = distToSurface;
       gl.uniform1f(shaderProgram.justDE, false);  
-      
-      mvPopMatrix();
-      
 
-	gl.uniform1i(shaderProgram.maxIterations, document.getElementById("maxIterations").value);
+		
 	
-	//changing of powers
-	if(document.getElementById("iteratePowers").checked==true){
-		power = 8.0 + Math.cos(time / 10000.0) * 4.0;
-		var trimPower = trimNum(power.toString());
-		document.getElementById("power").value = trimPower;
-		document.getElementById("power").className = "checked";
-	}else{
-		power = document.getElementById("power").value;
-		document.getElementById("power").className = "unchecked";
-	}
-	
-	gl.uniform1f(shaderProgram.power, power);
-
-	gl.uniform1i(shaderProgram.antialiasing, aaValue);
-
-	gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
-
-
-	colorChange = document.getElementById("colorChange").value;
-	gl.uniform1f(shaderProgram.colorChange, colorChange);
-
-	ambientRed = document.getElementById("ambientRed").value;
-	ambientGreen = document.getElementById("ambientGreen").value;
-	ambientBlue = document.getElementById("ambientBlue").value;
-
-	gl.uniform1f(shaderProgram.ambientRed, ambientRed);
-	gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
-	gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
-
-	}
-	
-    }
+  }
 
 
     function animate() {
@@ -1366,7 +1261,12 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     
     var lastFPS = 1;
     var fps = 1;
+  
     function tick() {
+      if(document.getElementById("stop").checked == true){
+        requestAnimFrame(tick);
+        return;
+      }
       animate();
       handleKeys();
       
@@ -1385,9 +1285,10 @@ var perm = new Uint8Array([151,160,137,91,90,15,
         setTimeout("tick();", 100);
           return;
       }
-        requestAnimFrame(tick);
+      
+      requestAnimFrame(tick);
         
-        drawScene();
+      drawScene();
         
     }
 
