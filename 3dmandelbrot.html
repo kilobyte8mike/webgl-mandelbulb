@@ -695,10 +695,11 @@ vec4 renderPixel(vec2 pixel)
 
 		// Found intersection?
 		if (dist < eps) {
+      vec3 normal = estimate_normal(ray, eps/2.0);
 			ao	= 1.0 - clamp(1.0 - min_dist * min_dist, 0.0, 1.0) * ambientOcclusion;
 
 			if (phong) {
-				vec3 normal = estimate_normal(ray, eps/2.0);
+				
 				float specular = 0.0;
 				pixel_color.rgb = Phong(ray, normal, specular);
 
@@ -750,7 +751,7 @@ vec4 renderPixel(vec2 pixel)
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
 			if(normalLighting){   //using no lighting
-				pixel_color.rgb = estimate_normal(ray, eps/2.5);
+				pixel_color.rgb = normal;
 			}
 			ao *= 1.0 - (float(i) / float(max_steps)) * ambientOcclusionEmphasis * 2.0;
 			pixel_color.rgb *= ao;
@@ -1732,12 +1733,6 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 </div>
 
 <br/>
-
-
-
-
-    
-
 
 
 <!-- The end of the full body table -->
