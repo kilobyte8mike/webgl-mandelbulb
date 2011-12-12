@@ -50,20 +50,30 @@ div.header{
 
 div.all{
 	float:left;
-	background-color:red;
-	width:33%;
+	background-color:#739BC9;
+	width:34%;
 }
 
 div.phong{
 	float:left;
-	background-color:#00ff00;
-	width:34%;
+	background-color:#739BC9;
+	width:33%;
 }
 
 div.noise{
-	float:right;
-	background-color:#ff00ff;
+	float:left;
+	background-color:#739BC9;
 	width:33%;
+}
+
+div.allRight{
+	float:left;
+	width:45%;
+}
+
+div.allLeft{
+	float:left;
+	width:40%;
 }
 
 input.statBox{
@@ -71,6 +81,16 @@ input.statBox{
 	background-color: #739BC9;
 }
 
+.unchecked{
+	border: inset;
+	border-width: 2px;
+	background-color: #ffffff;
+}
+
+.checked{
+	border: none;
+	background-color: #739BC9;
+}
 
 	
 
@@ -1134,7 +1154,9 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       mat4.multiplyVec3(inverseMatrix, zDir);
       
       var dist = DE(cameraPosition); 
-      document.getElementById("cameraDistance").value = dist;
+	var trimDist = trimNum(dist.toString());      
+	document.getElementById("cameraDistance").value = trimDist;
+      
       dist = Math.min(dist/3 , .1);
       var zDir = [0.0, 0.0, 1.0];
       mat4.multiplyVec3(inverseMatrix, zDir);
@@ -1205,8 +1227,13 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
     var lastFPS = 0.0;
     var smoothFPS = 0;
+
+	var aaValue = 1;
     
     function drawScene() {
+
+	if(document.getElementById("stop").checked == false){
+
     if(smoothFPS % 10 == 0){
       document.getElementById("fps").value = Math.round(1000000/(time - lastFPS))/100 ;
       lastFPS = time;
@@ -1262,17 +1289,18 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	
 	//changing of powers
 	if(document.getElementById("iteratePowers").checked==true){
-    	    power = 8.0 + Math.cos(time / 10000.0) * 4.0;
-    	    document.getElementById("power").value = power;
-	    document.getElementById("power").type = "text";
+		power = 8.0 + Math.cos(time / 10000.0) * 4.0;
+		var trimPower = trimNum(power.toString());
+		document.getElementById("power").value = trimPower;
+		document.getElementById("power").className = "checked";
 	}else{
-    	    power = document.getElementById("power").value;
-	    document.getElementById("power").type = "textarea";
+		power = document.getElementById("power").value;
+		document.getElementById("power").className = "unchecked";
 	}
 	
 	gl.uniform1f(shaderProgram.power, power);
 
-	gl.uniform1i(shaderProgram.antialiasing, document.getElementById("antialiasing").value);
+	gl.uniform1i(shaderProgram.antialiasing, aaValue);
 
 	gl.uniform1f(shaderProgram.julia, document.getElementById("julia").checked);
 
@@ -1287,6 +1315,8 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	gl.uniform1f(shaderProgram.ambientRed, ambientRed);
 	gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
 	gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
+
+	}
 	
     }
 
@@ -1305,7 +1335,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 
     function webGLStart() {
-        var canvas = document.getElementById("lesson03-canvas");
+        var canvas = document.getElementById("mandelBulb");
         initGL(canvas);
         initShaders()
         initBuffers();
@@ -1324,6 +1354,209 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     function showValue(name, newValue)    {
       document.getElementById(name).innerHTML=newValue;
     }
+
+	function aaChange(aaNum){
+		aaValue = aaNum;
+	}
+
+	function trimNum(num){
+		return num.substr(0,7);
+	}
+
+	
+	var presetRotation = mat4.create();
+
+	function preset(num){
+
+		var presetRotation = mat4.create();
+		mat4.identity(presetRotation);
+	
+		if(num == 1){
+
+			resetCamera();
+	
+			cameraPosition[0] = 0.0;			
+			cameraPosition[1] = 0.0;			
+			cameraPosition[2] = 3.0;
+			
+			document.getElementById("phong").checked = true;
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("phong").checked = true;
+			document.getElementById("power").value = 8;
+			document.getElementById("iteratePowers").checked = true;
+			document.getElementById("iterationValue").value = 10;
+			document.getElementById("antialiasing1").checked = true;
+			aaValue = 1;
+			document.getElementById("colorChange").value = 1;
+			document.getElementById("ambientRed").value = 0.5;
+			document.getElementById("ambientGreen").value = 0.5;
+			document.getElementById("ambientBlue").value = 0.5;
+			document.getElementById("marble").checked = true;
+			document.getElementById("lacunarity").value = 2.0;
+			document.getElementById("gain").value = 0.5;
+			document.getElementById("octaves").value = 50;
+			document.getElementById("stop").checked = false;
+
+		}else if(num == 2){
+
+			resetCamera();	
+
+			mat4.rotate(presetRotation, 1.0, [0.0, 1.0, 0.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = -1.45;
+			cameraPosition[1] = 0.29;			
+			cameraPosition[2] = 0.54;
+			
+			document.getElementById("normal").checked = true;
+			document.getElementById("iteratePowers").checked = false;
+			document.getElementById("power").value = 11.5;
+			document.getElementById("antialiasing3").checked = true;
+			aaValue = 3;
+			document.getElementById("stop").checked = true;
+
+		}else if(num == 3){
+
+			resetCamera();	
+
+			mat4.rotate(presetRotation, -0.25, [0.0, 1.0, 0.0]);
+			mat4.rotate(presetRotation, -1.5, [1.0, 0.0, 0.0]);
+			mat4.rotate(presetRotation, 2.5, [0.0, 1.0, 0.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = -0.49;
+			cameraPosition[1] = -1.24;			
+			cameraPosition[2] = 0.41;
+						
+			document.getElementById("normal").checked = true;
+			document.getElementById("julia").checked = true;
+			document.getElementById("iteratePowers").checked = false;
+			document.getElementById("power").value = 5.015;
+			document.getElementById("antialiasing3").checked = true;
+			aaValue = 3;
+			document.getElementById("stop").checked = true;
+
+		}else if(num == 4){
+			
+			resetCamera();	
+
+			mat4.rotate(presetRotation, 1.0, [0.0, 1.0, 0.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = -1.23;
+			cameraPosition[1] = 0.0;			
+			cameraPosition[2] = 0.77;
+
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("iteratePowers").checked = true;
+			document.getElementById("lacunarity").value = 10;
+			document.getElementById("gain").value = 1;
+			document.getElementById("octaves").value = 1;
+			document.getElementById("noise").checked = true;
+			document.getElementById("original").checked = true;
+			document.getElementById("antialiasing1").checked = true;
+			aaValue = 1;
+			document.getElementById("stop").checked = false;
+
+		}else if(num == 5){
+
+			resetCamera();
+
+			mat4.rotate(presetRotation, 0.78, [1.0, 0.0, 0.0]);
+			mat4.rotate(presetRotation, 0.92, [0.0, 0.0, 1.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = 1.66;
+			cameraPosition[1] = 1.19;			
+			cameraPosition[2] = 2.01;
+
+			document.getElementById("stop").checked = false;
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("iteratePowers").checked = false;
+			document.getElementById("power").value = 7;
+			document.getElementById("phongNoise").checked = true;
+			document.getElementById("marble").checked = true;
+			document.getElementById("colorChange").value = 0.5;
+			document.getElementById("ambientRed").value = 0.7;
+			document.getElementById("ambientGreen").value = 0.3;
+			document.getElementById("ambientBlue").value = 0.9;
+			document.getElementById("antialiasing1").checked = true;
+			aaValue = 1;
+
+		}else if(num == 6){
+
+			resetCamera();
+			
+			mat4.rotate(presetRotation, -2.4, [0.0, 1.0, 0.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = 1.24;
+			cameraPosition[1] = 0.0;			
+			cameraPosition[2] = -1.42;
+
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("iteratePowers").checked = true;
+			document.getElementById("ambientRed").value = 0;
+			document.getElementById("ambientGreen").value = 0.69;
+			document.getElementById("ambientBlue").value = 0;
+			document.getElementById("colorChange").value = 0.5;
+			document.getElementById("phong").checked = true;
+			document.getElementById("antialiasing1").checked = true;
+			aaValue = 1;
+			document.getElementById("stop").checked = false;
+
+
+		}else if(num == 7){
+
+			resetCamera();
+
+			mat4.rotate(presetRotation, 0.78, [1.0, 0.0, 0.0]);
+			mat4.rotate(presetRotation, 0.92, [0.0, 0.0, 1.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = 1.66;
+			cameraPosition[1] = 1.19;			
+			cameraPosition[2] = 2.01;
+			document.getElementById("stop").checked = false;
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("iteratePowers").checked = false;
+			document.getElementById("power").value = 4.48;
+			document.getElementById("normal").checked = true;
+			document.getElementById("antialiasing2").checked = true;
+			aaValue = 2;
+
+		}else if(num == 8){
+
+			resetCamera();
+
+			mat4.rotate(presetRotation, -0.78, [1.0, 0.0, 0.0]);
+			mat4.rotate(presetRotation, -0.92, [0.0, 0.0, 1.0]);
+			mat4.rotate(presetRotation, 0.75, [1.0, 0.0, 0.0]);
+			mat4.rotate(presetRotation, 9, [0.0, 1.0, 0.0]);
+			mat4.rotate(presetRotation, 5, [0.0, 0.0, 1.0]);
+			mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+
+			cameraPosition[0] = -1.33;
+			cameraPosition[1] = -2.56;			
+			cameraPosition[2] = -1.82;
+			document.getElementById("stop").checked = false;
+			document.getElementById("mandelbrot").checked = true;
+			document.getElementById("iteratePowers").checked = false;
+			document.getElementById("power").value = 3.5;
+			document.getElementById("normal").checked = true;
+			document.getElementById("antialiasing2").checked = true;
+			aaValue = 2;
+
+		}
+	}
+
+	function resetCamera(){
+		mat4.identity(presetRotation);
+		mat4.identity(cameraRotation);
+		mat4.multiply(presetRotation, cameraRotation, cameraRotation);
+	}
+
+	
 </script>
 
 </head>
@@ -1338,12 +1571,15 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 <div class="header">
 	<h1>MandelBulb</h4>
 	<h3>By: Michael Jewell, Jesse Altman, Shane Christy, Kayla Artinyan</h3>
+	<h4>WARNING! This is graphic intensive. Use a high end computer for best performance.
+	<br />
+	Requires Linux or Mac OS X to run. Chrome Browser prefered.</h4>
 	<hr width="65%" />
 	<br />
 </div>
 
 <div class="canvas">    
-	<canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
+	<canvas id="mandelBulb" style="border: none;" width="500" height="500"></canvas>
 </div>
 
 <div class="stats">
@@ -1356,39 +1592,139 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 	<u>Camera Direction:</u>&nbsp;&nbsp;
 	X:&nbsp;&nbsp;<input type="text" id="cameraDirectionX" value="0.0" size="6" class="statBox" />
 	Y:&nbsp;&nbsp;<input type="text" id="cameraDirectionY" value="0.0" size="6" class="statBox" />
-	Z:&nbsp;&nbsp;<input type="text" id="cameraDirectionZ" value="-1.0" size="6" class="statBox" /> <br/>
+	Z:&nbsp;&nbsp;<input type="text" id="cameraDirectionZ" value="-1.0" size="6" class="statBox" />
+
+	<br/>
 	
 	<u>Camera Position:</u>&nbsp;&nbsp;&nbsp;&nbsp;
 	X:&nbsp;&nbsp;<input type="text" id="cameraPosX" value="0.0" size="6" class="statBox" />
 	Y:&nbsp;&nbsp;<input type="text" id="cameraPosY" value="0.0" size="6" class="statBox" />
-	Z:&nbsp;&nbsp;<input type="text" id="cameraPosZ" value="2.0" size="6" class="statBox" /> <br/>
-	<br />
-	<u>Camera Distance to fractal:</u> <input type="text" id="cameraDistance" value="0.0" class="statBox" /> <br/>
+	Z:&nbsp;&nbsp;<input type="text" id="cameraPosZ" value="2.0" size="6" class="statBox" />
+
+	<br/><br />
+
+	<u>Camera Distance to fractal:</u>&nbsp;
+	<input type="text" id="cameraDistance" value="0.0" class="statBox" size="20" /> <br/>
 
 	<br />
 	<h2>Controls:</h2>
-	use "gamer" style controls<br />
-	w,a,s,d,e,c move forward, back, left, right, up, down <br/>
-	i,j,k,l,u,o rotate the currnet view up,left,down,right,roll right, roll left<br/>
 
+	<ul>
+		<li>Move Forward/Backwards -- W/S</li>
+		<li>Move Left/Right -- A/D</li>
+		<li>Move Up/Down -- E/C</li>
+		<br />
+		<li>Rotate Up/Down -- I/K</li>
+		<li>Rotate Left/Right -- J/L</li>
+		<li>Roll Left/Right -- U/O</li>
+	</ul>
 
+	<h2>Presets</h2>
 
+	<input type="button" value="1" onclick="preset(1)" />
+	<input type="button" value="2" onclick="preset(2)" />
+	<input type="button" value="3" onclick="preset(3)" />
+	<input type="button" value="4" onclick="preset(4)" />
+	<input type="button" value="5" onclick="preset(5)" />
+	<input type="button" value="6" onclick="preset(6)" />
+	<input type="button" value="7" onclick="preset(7)" />
+	<input type="button" value="8" onclick="preset(8)" />
+
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<input type="checkbox" id="stop" />Stop
+
+	
 </div>
 
 <div class="close">
 	<br />
 </div>
 
+
 <div class="all">
-	<br />all<br /><br />
+
+	<h2>Variables</h2>
+
+	<div class="allLeft">
+		<u>Fractal Set</u><br />
+		<input id="mandelbrot" type="radio" name="fractalGroup" checked/>Mandelbrot<br />
+		<input id="julia" type="radio" name="fractalGroup" />Julia 
+	</div>
+	
+	<div class="allRight">
+		<u>Other Shading Styles</u><br />
+		<input id="phongNoise" type="radio" name="shading" />Phong and Noise<br />
+		<input id="normal" type="radio" name="shading" />Normals<br />
+		<input id="none" type="radio" name="shading" />None
+	</div>
+
+	<div class="close">
+		<br />
+	</div>
+
+	
+
+	Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" checked /><br/>
+	
+	Power: <input type="text" id="power" value="8" class="checked" size="8" /><br />
+	
+	Max Iterations (provides finer detail):
+	<input id="maxIterations" type="range" min="0" max="50" value="10" step="1" 
+	onchange="showValue('iterationValue', this.value)" />
+	&nbsp;&nbsp;&nbsp;&nbsp;	
+	<span id="iterationValue">10</span>
+
+	<br/><br />
+
+	Antialiasing (minimizes distortion / slows rendering exponentially):<br />
+	<input id="antialiasing1" type="radio" name="aavalue" onchange="aaChange(1)" checked />1x
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<input id="antialiasing2" type="radio" name="aavalue" onchange="aaChange(2)" />2x
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<input id="antialiasing3" type="radio" name="aavalue" onchange="aaChange(3)" />3x
+
+	<br/><br />
+
+
+
 </div>
+
+
 
 <div class="phong">
-	<br />phong<br /><br />
+	<h2>Phong Variables</h2>
+
+	<input id="phong" type="radio" name="shading" checked />Phong Shading
+
+	<br /><br />
+
+	Color Change Speed: <input type="text" id="colorChange" value="1" size="6" /><br />
+	Ambient Red:&nbsp;&nbsp;&nbsp;&nbsp;
+	<input type="text" id="ambientRed" value="0.5" size="6" /><br />
+	Ambient Green:&nbsp;
+	<input type="text" id="ambientGreen" value="0.5" size="6" /><br />
+	Ambient Blue:&nbsp;&nbsp;&nbsp;
+	<input type="text" id="ambientBlue" value="0.9" size="6" /><br/>
+
 </div>
 
+
+
 <div class="noise">
-	<br />noise<br /><br />
+	<h2>Noise Variables</h2>
+
+	<input id="noise" type="radio" name="shading" />Noise Shading
+
+	<br /><br />
+
+	<input id="marble" type="radio" name="noiseType" checked/>Marble<br />
+	<input id="original" type="radio" name="noiseType" />Standard
+
+	<br /><br />
+
+	Lacunarity: <input id="lacunarity" type="text" value="2.0" size="6" /><br />
+	Gain: <input id="gain" type="text" value="0.5" size="6" /><br />
+	Octaves: <input id="octaves" type="text" value="50" size="6" /><br/>
 </div>
 
 <div class="close">
@@ -1397,41 +1733,11 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 <br/>
 
-	Iterate Powers <input type="checkbox" id="iteratePowers" value="iterate" /><br/>
-	Power: <input type="text" id="power" value="8" />
 
-  Max Iterations (provides finer detail):
-  <input id="maxIterations" type="range" min="0" max="50" value="10" step="1" 
-	 onchange="showValue('iterationValue', this.value)" />
-  <span id="iterationValue">10</span> <br/>
 
-  Antialiasing (minimizes distortion / slows rendering exponentially):
-  <input id="antialiasing" type="range" min="1" max="3" value="1" step="1"
-	onchange="showValue('antialiasingValue', this.value )" />
 
-  <span id="antialiasingValue">1</span>x<br/>
-
-  Color Change <input type="text" id="colorChange" value="1" /> 
-  Ambient Red: <input type="text" id="ambientRed" value="0.5" /> 
-  Ambient Green: <input type="text" id="ambientGreen" value="0.5" /> 
-  Ambient Blue: <input type="text" id="ambientBlue" value="0.9" /> <br/>
-
-  Mandelbrot <input id="mandelbrot" type="radio" name="fractalGroup" checked/>
-  Julia <input id="julia" type="radio" name="fractalGroup" />
-  
-  ___|___ Shading:
-  both <input id="phongNoise" type="radio" name="shading" />
-  / Phong <input id="phong" type="radio" name="shading" />
-  / Noise <input id="noise" type="radio" name="shading" checked>
-	/ Normals <input id="normal" type="radio" name="shading" />
-  / None <input id="none" type="radio" name="shading" /><br/>
     
-  Noise Specific:
-  marble <input id="marble" type="radio" name="noiseType" checked/>
-  original <input id="original" type="radio" name="noiseType" />
-  lacunarity  <input id="lacunarity" type="text" value="2.0" />
-  gain  <input id="gain" type="text" value="0.5"/>
-  octaves  <input id="octaves" type="text" value="50"/><br/>
+
 
 
 <!-- The end of the full body table -->
