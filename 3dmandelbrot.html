@@ -1040,7 +1040,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     }
     function length(vect){
         var total = 0.0;
-        for(var i =0; i<3; i++)
+        for(var i =0; i<vect.length; i++)
             total += vect[i] * vect[i];
         return Math.sqrt(total);
     }
@@ -1186,17 +1186,21 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
       var zDir = [0.0, 0.0, 1.0];
       mat4.multiplyVec3(inverseMatrix, zDir);
+      
+      
+      var tempPosition = [cameraPosition[0], cameraPosition[1], cameraPosition[2]];
+      
       if (currentlyPressedKeys[87]) {
         // w
-        cameraPosition[0] -= dist * zDir[0];
-        cameraPosition[1] -= dist * zDir[1] ;
-        cameraPosition[2] -= dist * zDir[2];
+        tempPosition[0] -= dist * zDir[0];
+        tempPosition[1] -= dist * zDir[1] ;
+        tempPosition[2] -= dist * zDir[2];
       }
       if (currentlyPressedKeys[83]) {
         // s
-        cameraPosition[0] += dist * zDir[0];
-        cameraPosition[1] += dist * zDir[1];
-        cameraPosition[2] += dist * zDir[2];
+        tempPosition[0] += dist * zDir[0];
+        tempPosition[1] += dist * zDir[1];
+        tempPosition[2] += dist * zDir[2];
       }
       
       //now create a vector pointing to the right as the camera would see it
@@ -1206,16 +1210,16 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       
       if (currentlyPressedKeys[65]) {
         // a
-        cameraPosition[0] -= dist * xDir[0];
-        cameraPosition[1] -= dist * xDir[1];
-        cameraPosition[2] -= dist * xDir[2];
+        tempPosition[0] -= dist * xDir[0];
+        tempPosition[1] -= dist * xDir[1];
+        tempPosition[2] -= dist * xDir[2];
       }
       
       if (currentlyPressedKeys[68]) {
         // d
-        cameraPosition[0] += dist * xDir[0];
-        cameraPosition[1] += dist * xDir[1];
-        cameraPosition[2] += dist * xDir[2];
+        tempPosition[0] += dist * xDir[0];
+        tempPosition[1] += dist * xDir[1];
+        tempPosition[2] += dist * xDir[2];
       }
 
 //calculate up vector for elevator movement
@@ -1224,17 +1228,20 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       
       if (currentlyPressedKeys[69]) {
         // e
-        cameraPosition[0] -= dist * yDir[0];
-        cameraPosition[1] -= dist * yDir[1];
-        cameraPosition[2] -= dist * yDir[2];
+        tempPosition[0] -= dist * yDir[0];
+        tempPosition[1] -= dist * yDir[1];
+        tempPosition[2] -= dist * yDir[2];
       }
       
       if (currentlyPressedKeys[67]) {
         // c
-        cameraPosition[0] += dist * yDir[0];
-        cameraPosition[1] += dist * yDir[1];
-        cameraPosition[2] += dist * yDir[2];
+        tempPosition[0] += dist * yDir[0];
+        tempPosition[1] += dist * yDir[1];
+        tempPosition[2] += dist * yDir[2];
       }
+      
+      if(length(tempPosition) <4)
+        cameraPosition = tempPosition;
       document.getElementById("cameraDirectionX").value = Math.round(zDir[0] * 100)/100;
       document.getElementById("cameraDirectionY").value = Math.round(zDir[1] * 100)/100;
       document.getElementById("cameraDirectionZ").value = Math.round(zDir[2] * 100)/100;
@@ -1250,21 +1257,14 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     var time = 0.0;
   
     var julia;
-
-    var lastFPS = 0.0;
-    var smoothFPS = 0;
-
+  
 	var aaValue = 1;
     
     function drawScene() {
 
 	if(document.getElementById("stop").checked == false){
-
-    if(smoothFPS % 10 == 0){
-      document.getElementById("fps").value = Math.round(1000000/(time - lastFPS))/100 ;
-      lastFPS = time;
-    }
-    smoothFPS += 1;
+    
+        
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -1363,13 +1363,32 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     function animate() {
         time = new Date().getTime();
     }
-
-
+    
+    var lastFPS = 1;
+    var fps = 1;
     function tick() {
+      animate();
+      handleKeys();
+      
+      fps = 1000/(time - lastFPS);
+      document.getElementById("fps").value = Math.round(100 * fps)/100 ;
+      lastFPS = time;
+      
+      //attempt to keep system responsive 
+      if(fps < 3){ 
+        handleKeys(); //sytem is slow, up the keyboard input
+        if (fps < 1){    //is your GPU smoking?
+          handleKeys();//system is reallly slowing down, lets up the input
+          setTimeout("tick();", 200)
+          return;
+        }
+        setTimeout("tick();", 100);
+          return;
+      }
         requestAnimFrame(tick);
-        handleKeys();
+        
         drawScene();
-        animate();
+        
     }
 
 
