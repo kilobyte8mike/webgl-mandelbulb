@@ -481,15 +481,17 @@ void main()
 {
 	vec4 c = vec4(0, 0, 0, 1.0);
 	vec2 p = vec2(Position) * size;
-	
+	/* //commented out for windows compatability
 	if (antialiasing > 0) {
 		// Average detailSuperSample^2 points per pixel
 		for (float i = 0.0; i < 1.0; i += sampleStep)
 			for (float j = 0.0; j < 1.0; j += sampleStep)
 				c += sampleContribution * renderPixel(p + vec2(i, j));
-	} else {
-		c = renderPixel(p);
-	}
+	} else {*/
+		
+  
+  c = renderPixel(p);
+	//}
 	
 	if (c.a <= 0.0) discard;
 	
