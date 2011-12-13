@@ -100,9 +100,9 @@ input.statBox{
 <script type="text/javascript" src="webgl-utils.js"></script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
-    #ifdef GL_ES
-    precision highp float;
-    #endif
+  //#ifdef GL_ES
+  precision highp float;
+  //#endif
 
 /** 
  3dmandelbrot was put together by:
@@ -236,7 +236,7 @@ const float ambientOcclusion = 0.5;
 const float ambientOcclusionEmphasis = 0.5;
 const float bounding = 1.718;
 const float bailout = 4.0;
-//float power = 8.0 + cos(ftime / 10000.0) * 4.0;
+//float power = 8.0 + (ftime / 10000.0) * 4.0;
  vec2  phase = vec2(0.0, 0.0);
  vec3  julia_c = vec3(0.95, 0.0, 0.0);
   // vec3  camera = vec3(1.0, 0.5, 2.0);
@@ -246,7 +246,7 @@ const float bailout = 4.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
  vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
- vec4  ambientColor = vec4(ambientRed*cos(colorChange*ftime/500.0), ambientGreen*cos(colorChange*ftime/600.0), ambientBlue*cos(colorChange*ftime/1000.0), 1.0);
+ vec4  ambientColor = vec4(ambientRed*sin(1.57079633 - (colorChange*ftime/500.0)), ambientGreen*sin(1.57079633 - (colorChange*ftime/600.0)), ambientBlue*sin(1.57079633 - (colorChange*ftime/1000.0)), 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
  float rimLight = 1.0;
@@ -271,19 +271,19 @@ float aspectRatio = size.x / size.y;
 
 
 // Object rotation
-float c4 = cos(radians(-rotation.x));
+float c4 = sin(1.57079633 - (radians(-rotation.x)));
 float s4 = sin(radians(-rotation.x));
 mat3 objRotationY = mat3( c4, 0, s4,
 					    0, 1, 0,
 					  -s4, 0, c4);
 
-float c5 = cos(radians(-rotation.y));
+float c5 = sin(1.57079633 - (radians(-rotation.y)));
 float s5 = sin(radians(-rotation.y));
 mat3 objRotationZ = mat3( c5, -s5, 0,
 					   s5, c5, 0,
 					    0, 0, 1);
 
-float c6 = cos(radians(-rotation.z));
+float c6 = sin(1.57079633 - (radians(-rotation.z)));
 float s6 = sin(radians(-rotation.z));
 mat3 objRotationX = mat3( 1, 0, 0,
 								   0, c6, -s6,
@@ -510,9 +510,9 @@ float DE(vec3 z0, inout float min_dist)
 		// Calculate derivative of
 		powR = power * pow(r, pd);
 		powRsin = powR * r_dz * sin(ph_dz + pd*ph);
-		dz.x = powRsin * cos(th_dz + pd*th) + 1.0;
+		dz.x = powRsin * sin(1.57079633 - (th_dz + pd*th)) + 1.0;
 		dz.y = powRsin * sin(th_dz + pd*th);
-		dz.z = powR * r_dz * cos(ph_dz + pd*ph);
+		dz.z = powR * r_dz * sin(1.57079633 - (ph_dz + pd*ph));
 
 		// polar coordinates of derivative dz
 		r_dz  = length(dz);
@@ -522,9 +522,9 @@ float DE(vec3 z0, inout float min_dist)
 		// z iteration
 		powR = pow(r, power);
 		powRsin = sin(power*ph);
-		z.x = powR * powRsin * cos(power*th);
+		z.x = powR * powRsin * sin(1.57079633 - (power*th));
 		z.y = powR * powRsin * sin(power*th);
-		z.z = powR * cos(power*ph);
+		z.z = powR * sin(1.57079633 - (power*ph));
 		z += c;
 
 		// The triplex power formula applies the azimuthal angle rotation about the y-axis.
@@ -1195,7 +1195,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
     
     //changing of powers
     if(document.getElementById("iteratePowers").checked==true){
-      power = 8.0 + Math.cos(time / 10000.0) * 4.0;
+      power = 8.0 + Math.sin(1.57079633 - (time / 10000.0)) * 4.0;
       var trimPower = trimNum(power.toString());
       document.getElementById("power").value = trimPower;
       document.getElementById("power").className = "checked";
