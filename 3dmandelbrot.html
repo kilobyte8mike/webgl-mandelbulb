@@ -115,17 +115,20 @@ uniform int antialiasing;
 uniform bool julia;
 uniform bool uNoise;
 uniform bool phong;
+/* //removing for windows 
 uniform float colorChange;
 uniform float ambientRed;
 uniform float ambientGreen;
 uniform float ambientBlue;
-
+*/
 uniform sampler2D permTexture; //for simplex noise
+
+/* removing for windows
 uniform bool uMarble;
 uniform float uLacunarity;
 uniform float uGain;
 uniform float uOctaves;
-  
+ */
 float ftime = float(time); 	
 
 
@@ -152,7 +155,7 @@ const float bailout = 4.0;
  vec3  light = vec3(100, -54.41, 27.94);
  vec4  backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
  vec4  diffuseColor = vec4(1.0, 0.7, 1.0, 1.0);
- vec4  ambientColor = vec4(ambientRed*cos(colorChange*ftime/500.0), ambientGreen*cos(colorChange*ftime/600.0), ambientBlue*cos(colorChange*ftime/1000.0), 1.0);
+ vec4  ambientColor = vec4(1.0, 1.0, 1.0, 1.0);//vec4(ambientRed*cos(colorChange*ftime/500.0), ambientGreen*cos(colorChange*ftime/600.0), ambientBlue*cos(colorChange*ftime/1000.0), 1.0);
  vec4  lightColor = vec4(1.0, 1.0, 1.0, 1.0);
  float colorSpread = 0.3146;
  float rimLight = 1.0;
@@ -346,7 +349,7 @@ float ridgedmf(vec3 p, float lacunarity, float gain, float offset, float octaves
 	}
 	return sum;
 }
-
+/*removed for windows
 float marble(vec3 p, float lacunarity, float gain, float offset, float octaves)
   {
     float sum = 0.0;
@@ -360,7 +363,7 @@ float marble(vec3 p, float lacunarity, float gain, float offset, float octaves)
       amp *= gain;
     }
     return sin (p.x*10.0 + sum) * 0.33 + sin(p.y*10.0 + sum) * 0.33 +sin(p.z*10.0 + sum) * 0.33 ;
-  }
+  }*/
 float ridgedmfDefault(vec3 p, float octaves)
 {
        return ridgedmf(p, 2.0, .5, 1.0, octaves);
@@ -649,7 +652,7 @@ vec4 renderPixel(vec2 pixel)
       if(uNoise){
 	  
         float noise ;
-        //if(uMarble)
+        //if(uMarble) //removed for windows
          // noise = marble(ray, 2.0, 0.5, 1.0, 20.0);
        // else
           noise =  ridgedmf(ray, 2.0, 0.5, 1.0, 20.0); 
@@ -799,10 +802,10 @@ void main()
         shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
         shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
 
-    	shaderProgram.colorChange = gl.getUniformLocation(shaderProgram, "colorChange");
-    	shaderProgram.ambientRed = gl.getUniformLocation(shaderProgram, "ambientRed");
-    	shaderProgram.ambientGreen = gl.getUniformLocation(shaderProgram, "ambientGreen");
-    	shaderProgram.ambientBlue = gl.getUniformLocation(shaderProgram, "ambientBlue");
+    	//shaderProgram.colorChange = gl.getUniformLocation(shaderProgram, "colorChange");
+    	//shaderProgram.ambientRed = gl.getUniformLocation(shaderProgram, "ambientRed");
+    	//shaderProgram.ambientGreen = gl.getUniformLocation(shaderProgram, "ambientGreen");
+    	//shaderProgram.ambientBlue = gl.getUniformLocation(shaderProgram, "ambientBlue");
 
     	shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
     	shaderProgram.maxIterations = gl.getUniformLocation(shaderProgram, "maxIterations");
@@ -811,10 +814,10 @@ void main()
     	shaderProgram.permSampler = gl.getUniformLocation(shaderProgram, "permTexture");
     	shaderProgram.phong = gl.getUniformLocation(shaderProgram, "phong");
     	shaderProgram.noise = gl.getUniformLocation(shaderProgram, "uNoise");
-    	shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
-    	shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
-    	shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
-    	shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
+    	//shaderProgram.marble = gl.getUniformLocation(shaderProgram, "uMarble");
+    	//shaderProgram.lacunarity = gl.getUniformLocation(shaderProgram, "uLacunarity");
+    	//shaderProgram.gain = gl.getUniformLocation(shaderProgram, "uGain");
+    	//shaderProgram.octaves = gl.getUniformLocation(shaderProgram, "uOctaves");
     	shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     	shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,"uMVMatrix");
 
@@ -1168,10 +1171,10 @@ var perm = new Uint8Array([151,160,137,91,90,15,
       //noise uniforms
     gl.uniform1f(shaderProgram.noise, document.getElementById("noise").checked 
                  || document.getElementById("phongNoise").checked );
-      gl.uniform1f(shaderProgram.marble, document.getElementById("marble").checked);
-      gl.uniform1f(shaderProgram.lacunarity, document.getElementById("lacunarity").value);
-      gl.uniform1f(shaderProgram.gain, document.getElementById("gain").value);
-      gl.uniform1f(shaderProgram.octaves, document.getElementById("octaves").value);
+     // gl.uniform1f(shaderProgram.marble, document.getElementById("marble").checked);
+      //gl.uniform1f(shaderProgram.lacunarity, document.getElementById("lacunarity").value);
+     // gl.uniform1f(shaderProgram.gain, document.getElementById("gain").value);
+     // gl.uniform1f(shaderProgram.octaves, document.getElementById("octaves").value);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, permTexture);
     gl.uniform1i(shaderProgram.permSampler, 0);
@@ -1200,15 +1203,15 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
 
 	colorChange = document.getElementById("colorChange").value;
-	gl.uniform1f(shaderProgram.colorChange, colorChange);
+	//gl.uniform1f(shaderProgram.colorChange, colorChange);
 
 	ambientRed = document.getElementById("ambientRed").value;
 	ambientGreen = document.getElementById("ambientGreen").value;
 	ambientBlue = document.getElementById("ambientBlue").value;
 
-	gl.uniform1f(shaderProgram.ambientRed, ambientRed);
-	gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
-	gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
+	//gl.uniform1f(shaderProgram.ambientRed, ambientRed);
+	//gl.uniform1f(shaderProgram.ambientGreen, ambientGreen);
+	//gl.uniform1f(shaderProgram.ambientBlue, ambientBlue);
 	
     }
 
