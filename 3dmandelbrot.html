@@ -108,7 +108,7 @@ const float ambientOcclusion = 0.5;
 const float ambientOcclusionEmphasis = 0.5;
 const float bounding = 1.718;
 const float bailout = 4.0;
-float power = 8.0 + cos(ftime / 10000.0) * 4.0;
+uniform float power;// = 8.0 + cos(ftime / 10000.0) * 4.0;
  vec2  phase = vec2(0.0, 0.0);
  vec3  julia_c = vec3(0.95, 0.0, 0.0);
   // vec3  camera = vec3(1.0, 0.5, 2.0);
@@ -604,7 +604,7 @@ void main()
       shaderProgram.camera = gl.getUniformLocation(shaderProgram, "camera");
       shaderProgram.viewRotation = gl.getUniformLocation(shaderProgram, "viewRotation");
       
-	
+	 shaderProgram.power = gl.getUniformLocation(shaderProgram, "power");
         shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
         shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
     }
@@ -756,7 +756,7 @@ void main()
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
+ gl.uniform1f(shaderProgram.power, 8.0 + Math.cos(time / 10000.0) * 4.0);
       gl.uniform1i(shaderProgram.time, time);
       gl.uniform3fv(shaderProgram.camera, cameraPosition);
       gl.uniformMatrix3fv(shaderProgram.viewRotation, false, mat4.toMat3(cameraRotation));
