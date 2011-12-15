@@ -649,9 +649,9 @@ vec4 renderPixel(vec2 pixel)
       if(uNoise){
 	  
         float noise ;
-        if(uMarble)
-          noise = marble(ray, 2.0, 0.5, 1.0, 20.0);
-        else
+        //if(uMarble)
+         // noise = marble(ray, 2.0, 0.5, 1.0, 20.0);
+       // else
           noise =  ridgedmf(ray, 2.0, 0.5, 1.0, 20.0); 
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
