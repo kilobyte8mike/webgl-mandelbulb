@@ -346,13 +346,13 @@ float ridgedmf(vec3 p, float lacunarity, float gain, float offset, float octaves
 	}
 	return sum;
 }
-  
+
 float marble(vec3 p, float lacunarity, float gain, float offset, float octaves)
   {
     float sum = 0.0;
     float freq = 5.0, amp = 0.7;
     float prev = 1.0;
-    for(float i=0.0 ; i < 1000.0; i++) {
+    for(float i=0.0 ; i < 20.0; i++) {
       if(i > octaves){break;}
       float noise = abs(snoise(p*freq));
       sum += noise * amp;
@@ -647,11 +647,12 @@ vec4 renderPixel(vec2 pixel)
 				pixel_color.rgb = diffuseColor.rgb;
 			}
       if(uNoise){
+	  
         float noise ;
         if(uMarble)
-          noise = marble(ray, uLacunarity, uGain, 1.0, uOctaves);
+          noise = marble(ray, 2.0, 0.5, 1.0, 20.0);
         else
-          noise = ridgedmf(ray, uLacunarity, uGain, 1.0, uOctaves); 
+          noise =  ridgedmf(ray, 2.0, 0.5, 1.0, 20.0); 
         pixel_color.rgb *= vec3(noise, noise, noise);
       }
 			ao *= 1.0 - (float(i) / float(max_steps)) * ambientOcclusionEmphasis * 2.0;
