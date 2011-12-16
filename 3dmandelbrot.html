@@ -1155,7 +1155,7 @@ var perm = new Uint8Array([151,160,137,91,90,15,
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
- gl.uniform1f(shaderProgram.power, 8.0 + Math.cos(time / 10000.0) * 4.0);
+ gl.uniform1f(shaderProgram.power, power);
       gl.uniform1i(shaderProgram.time, time);
       
       //camera
